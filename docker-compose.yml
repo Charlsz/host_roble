@@ -1,0 +1,95 @@
+services:
+  # Cleanup Service - Limpia contenedores dinámicos antes de iniciar
+  cleanup:
+    image: docker:24-cli
+    container_name: roble_cleanup
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: >
+      sh -c "
+        echo 'LIMPIEZA AUTOMATICA DE CONTENEDORES DINAMICOS';
+        echo '===============================================';
+        CONTAINERS=$$(docker ps -a --filter 'name=dynamic_' --format '{{.Names}}' 2>/dev/null || true);
+        if [ ! -z \"$$CONTAINERS\" ]; then
+          echo 'Encontrados contenedores dinamicos:';
+          echo \"$$CONTAINERS\";
+          for container in $$CONTAINERS; do
+            echo \"Eliminando: $$container\";
+            docker stop $$container >/dev/null 2>&1 || true;
+            docker rm $$container >/dev/null 2>&1 || true;
+            echo \"  Eliminado\";
+          done;
+          echo 'Limpiando imagenes de microservicios...';
+          IMAGES=$$(docker images --filter 'reference=microservice_*' --format '{{.Repository}}:{{.Tag}}' 2>/dev/null || true);
+          if [ ! -z \"$$IMAGES\" ]; then
+            for image in $$IMAGES; do
+              docker rmi $$image --force >/dev/null 2>&1 || true;
+              echo \"  Imagen eliminada: $$image\";
+            done;
+          fi;
+          echo 'Limpieza completada';
+        else
+          echo 'No hay contenedores dinamicos para limpiar';
+        fi;
+        echo '==============================================='
+      "
+    networks:
+      - microservices_network
+
+  # Manager - Gestor principal de microservicios CON dashboard integrado
+  manager:
+    build: ./manager
+    container_name: microservices_manager
+    ports:
+      - "5000:5000"
+    environment:
+      - ROBLE_BASE_HOST=${ROBLE_BASE_HOST}
+      - ROBLE_CONTRACT=${ROBLE_CONTRACT}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Acceso a Docker
+    networks:
+      - microservices_network
+    privileged: true  # Permisos para manejar Docker
+    depends_on:
+      - cleanup
+
+  # Dashboard - Interfaz Web Frontend
+  dashboard:
+    build: ./dashboard
+    container_name: dashboard_frontend
+    ports:
+      - "8080:80"
+    networks:
+      - microservices_network
+    depends_on:
+      - manager
+
+  # Filter Service - Microservicio de Filtrado
+  filter-service:
+    build: ./microservices/filter_service
+    container_name: filter_service
+    ports:
+      - "5001:5000"
+    environment:
+      - ROBLE_BASE_HOST=${ROBLE_BASE_HOST}
+      - ROBLE_CONTRACT=${ROBLE_CONTRACT}
+      - SERVICE_NAME=filter-service
+    networks:
+      - microservices_network
+
+  # Aggregate Service - Microservicio de Agregación
+  aggregate-service:
+    build: ./microservices/aggregate_service
+    container_name: aggregate_service
+    ports:
+      - "5002:5000"
+    environment:
+      - ROBLE_BASE_HOST=${ROBLE_BASE_HOST}
+      - ROBLE_CONTRACT=${ROBLE_CONTRACT}
+      - SERVICE_NAME=aggregate-service
+    networks:
+      - microservices_network
+
+networks:
+  microservices_network:
+    driver: bridge

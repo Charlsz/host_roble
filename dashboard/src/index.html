@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Microservicios ROBLE</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Dashboard de Microservicios ROBLE</h1>
+            <div id="user-info" class="user-info hidden">
+                <span>Usuario: <strong id="user-email"></strong></span>
+                <button onclick="logout()" class="btn btn-logout">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <!-- Messages -->
+        <div id="error-msg" class="message error hidden"></div>
+        <div id="success-msg" class="message success hidden"></div>
+
+        <!-- Login Section -->
+        <div id="login-section" class="section">
+            <div class="login-card">
+                <h2>Iniciar Sesión</h2>
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="email">Email ROBLE:</label>
+                        <input type="email" id="email" placeholder="usuario@uninorte.edu.co" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Contraseña:</label>
+                        <input type="password" id="password" placeholder="Tu contraseña ROBLE" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section hidden">
+            
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <h3 id="total-services">0</h3>
+                    <p>Servicios Totales</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="running-services">0</h3>
+                    <p>Servicios Activos</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="custom-services">0</h3>
+                    <p>Servicios Creados</p>
+                </div>
+            </div>
+
+            <!-- Create Service Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Crear Nuevo Microservicio</h3>
+                    <button onclick="toggleCreateForm()" class="btn btn-secondary" id="toggle-create-btn">
+                        Mostrar Formulario
+                    </button>
+                </div>
+                
+                <div id="create-form" class="form-container hidden">
+                    <form id="create-service-form" onsubmit="handleCreateService(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="service-name">Nombre del Servicio:</label>
+                                <input type="text" id="service-name" placeholder="mi-filtro-personalizado" required>
+                                <small>Solo letras, números, guiones y guiones bajos</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="service-type">Tipo de Servicio:</label>
+                                <select id="service-type" required>
+                                    <option value="filter">Filter - Filtrado de datos</option>
+                                    <option value="aggregate">Aggregate - Agregación de datos</option>
+                                    <option value="custom">Custom - Lógica personalizada</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="service-description">Descripción (opcional):</label>
+                            <textarea id="service-description" 
+                                placeholder="Descripción de lo que hace este microservicio" 
+                                rows="3"></textarea>
+                        </div>
+
+                        <!-- Editor de código personalizado SIMPLE -->
+                        <div class="form-group">
+                            <label for="custom-code">Código Python/Flask (opcional):</label>
+                            <textarea id="custom-code" 
+                                placeholder="# Escribe tu código Python aquí (opcional)
+# Si no escribes código, se usará una plantilla básica
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'healthy'})
+
+@app.route('/process', methods=['POST'])
+def process_data():
+    data = request.json
+    # Tu lógica aquí
+    return jsonify({'result': 'processed', 'data': data})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)"
+                                rows="15" 
+                                style="font-family: monospace; font-size: 14px;"></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Crear Microservicio</button>
+                            <button type="button" onclick="clearCreateForm()" class="btn btn-secondary">Limpiar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Services List Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Microservicios Activos</h3>
+                    <button onclick="refreshServices()" class="btn btn-secondary">
+                        <span class="refresh-icon">⟳</span> Actualizar
+                    </button>
+                </div>
+                
+                <div id="services-list" class="services-grid">
+                    <div class="loading">Cargando servicios...</div>
+                </div>
+            </div>
+
+            <!-- Test Tool Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Herramienta de Pruebas</h3>
+                    <button onclick="toggleTestForm()" class="btn btn-secondary" id="toggle-test-btn">
+                        Mostrar Herramienta
+                    </button>
+                </div>
+                
+                <div id="test-form" class="form-container hidden">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="test-service">Seleccionar Servicio:</label>
+                            <select id="test-service" onchange="updateTestEndpoint()">
+                                <option value="">Seleccione un servicio</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="test-endpoint">Endpoint:</label>
+                            <input type="text" id="test-endpoint" placeholder="/process" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="test-data">Datos de Prueba (JSON):</label>
+                        <textarea id="test-data" 
+                            placeholder='{"criteria": "active", "limit": 10}' 
+                            rows="5"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button onclick="testEndpoint()" class="btn btn-primary">Ejecutar Prueba</button>
+                        <button onclick="clearTestForm()" class="btn btn-secondary">Limpiar</button>
+                    </div>
+                    
+                    <div id="test-result" class="test-result hidden">
+                        <h4>Resultado de la Prueba:</h4>
+                        <div id="test-output" class="test-output"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Management Tools Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Gestión y Herramientas</h3>
+                </div>
+                
+                <div class="management-tools">
+                    <button onclick="exportConfiguration()" class="btn btn-outline">
+                        📥 Exportar Configuración
+                    </button>
+                    <button onclick="showSystemLogs()" class="btn btn-outline">
+                        📋 Ver Logs del Sistema
+                    </button>
+                    <button onclick="showStatistics()" class="btn btn-outline">
+                        📊 Estadísticas Detalladas
+                    </button>
+                </div>
+                
+                <div id="management-output" class="management-output hidden">
+                    <div id="management-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmaciones -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Confirmar Acción</h3>
+                <button onclick="closeModal()" class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">¿Está seguro de realizar esta acción?</p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="confirmAction()" class="btn btn-danger">Confirmar</button>
+                <button onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+        <p>Procesando...</p>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
