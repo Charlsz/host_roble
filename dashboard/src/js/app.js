@@ -1,863 +1,447 @@
-/**
- * Dashboard JavaScript - Microservicios ROBLE
- * VERSIÓN 2.0 - DEBUGGING COMPLETO - 10/OCT/2025
- */
+// Configuración de la API
+const API_URL = 'http://localhost:5000/api';
 
-console.log('🔥 NUEVO ARCHIVO JS CARGADO - VERSIÓN 2.0 🔥');
-
-// Configuración global
-const CONFIG = {
-    MANAGER_URL: 'http://localhost:5000',
-    REFRESH_INTERVAL: 30000 // 30 segundos
-};
-
-// Estado global de la aplicación
-let currentToken = null;
+// Estado de la aplicación
 let currentUser = null;
-let activeServices = [];
-let pendingAction = null;
-let refreshTimer = null;
+let accessToken = null;
+let refreshToken = null;
+let projects = [];
+let autoRefreshInterval = null; // Para auto-actualización
 
-console.log('🚀 Dashboard ROBLE iniciado');
+// ==================== GESTIÓN DE AUTENTICACIÓN ====================
 
-// ==================== UTILIDADES ====================
-
-function showMessage(message, type = 'success') {
-    hideMessages();
-    const messageEl = document.getElementById(type === 'error' ? 'error-msg' : 'success-msg');
-    messageEl.textContent = message;
-    messageEl.classList.remove('hidden');
+// Inicialización
+document.addEventListener('DOMContentLoaded', () => {
+    // Verificar si hay sesión guardada
+    const savedToken = localStorage.getItem('accessToken');
+    const savedRefresh = localStorage.getItem('refreshToken');
     
-    // Auto-hide después de 5 segundos
-    setTimeout(() => {
-        messageEl.classList.add('hidden');
-    }, 5000);
-}
-
-function showError(message) {
-    showMessage(message, 'error');
-}
-
-function showSuccess(message) {
-    showMessage(message, 'success');
-}
-
-function hideMessages() {
-    document.getElementById('error-msg').classList.add('hidden');
-    document.getElementById('success-msg').classList.add('hidden');
-}
-
-function showLoading(show = true) {
-    const spinner = document.getElementById('loading-spinner');
-    if (show) {
-        spinner.classList.remove('hidden');
+    if (savedToken && savedRefresh) {
+        accessToken = savedToken;
+        refreshToken = savedRefresh;
+        verifyAndLoadSession();
     } else {
-        spinner.classList.add('hidden');
+        showAuthSection();
+    }
+});
+
+async function verifyAndLoadSession() {
+    try {
+        const response = await fetch(`${API_URL}/auth/me`, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            currentUser = data.user;
+            showDashboard();
+        } else {
+            // Token inválido, limpiar y mostrar login
+            clearSession();
+            showAuthSection();
+        }
+    } catch (error) {
+        console.error('Error verificando sesión:', error);
+        clearSession();
+        showAuthSection();
     }
 }
 
-function apiRequest(endpoint, options = {}) {
-    const url = `${CONFIG.MANAGER_URL}${endpoint}`;
-    const defaultOptions = {
-        headers: {
-            'Content-Type': 'application/json',
-            ...(currentToken && { 'Authorization': `Bearer ${currentToken}` })
-        }
-    };
+function showAuthTab(tab) {
+    // Actualizar tabs
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
     
-    return fetch(url, { ...defaultOptions, ...options });
+    // Mostrar contenido
+    document.getElementById('login-tab').classList.toggle('hidden', tab !== 'login');
+    document.getElementById('signup-tab').classList.toggle('hidden', tab !== 'signup');
 }
-
-// ==================== AUTENTICACIÓN ====================
 
 async function handleLogin(event) {
     event.preventDefault();
     
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    
-    if (!email || !password) {
-        showError('Por favor complete todos los campos');
-        return;
-    }
-    
-    showLoading(true);
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
     
     try {
-        console.log('🔐 Iniciando login con ROBLE...');
+        showMessage('Iniciando sesión...', 'success');
         
-        const response = await apiRequest('/api/login', {
+        const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ email, password })
         });
         
         const data = await response.json();
         
-        if (response.ok && data.success) {
-            currentToken = data.token;
-            currentUser = email;
+        if (response.ok) {
+            // Guardar tokens
+            accessToken = data.accessToken;
+            refreshToken = data.refreshToken;
+            currentUser = data.user;
             
-            // Guardar en localStorage
-            localStorage.setItem('roble_token', currentToken);
-            localStorage.setItem('roble_user', currentUser);
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
             
-            showSuccess('Login exitoso');
+            showMessage('¡Bienvenido! Sesión iniciada correctamente', 'success');
             showDashboard();
-            
-            console.log('✅ Login exitoso');
-            
         } else {
-            showError(data.error || 'Error de autenticación');
-            console.error('❌ Error de login:', data.error);
+            showMessage(data.error || 'Error al iniciar sesión', 'error');
         }
-        
     } catch (error) {
-        showError('Error de conexión con el servidor');
-        console.error('❌ Error de conexión:', error);
-    } finally {
-        showLoading(false);
+        console.error('Error en login:', error);
+        showMessage('Error de conexión. Verifica que el servidor esté activo.', 'error');
     }
 }
 
-function showDashboard() {
-    // Ocultar login y mostrar dashboard
-    document.getElementById('login-section').classList.add('hidden');
-    document.getElementById('dashboard-section').classList.remove('hidden');
-    document.getElementById('user-info').classList.remove('hidden');
-    document.getElementById('user-email').textContent = currentUser;
-    
-    // Cargar datos iniciales
-    refreshServices();
-    loadTestServices();
-    startAutoRefresh();
-}
-
-function logout() {
-    console.log('🚪 Cerrando sesión...');
-    
-    // Limpiar estado
-    currentToken = null;
-    currentUser = null;
-    activeServices = [];
-    
-    // Limpiar localStorage
-    localStorage.removeItem('roble_token');
-    localStorage.removeItem('roble_user');
-    
-    // Limpiar timers
-    if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
-    }
-    
-    // Mostrar login
-    document.getElementById('dashboard-section').classList.add('hidden');
-    document.getElementById('user-info').classList.add('hidden');
-    document.getElementById('login-section').classList.remove('hidden');
-    
-    // Limpiar formularios
-    document.getElementById('login-form').reset();
-    clearCreateForm();
-    clearTestForm();
-    hideMessages();
-    
-    showSuccess('Sesión cerrada correctamente');
-}
-
-// ==================== GESTIÓN DE MICROSERVICIOS ====================
-
-let isCreatingService = false; // Flag para prevenir doble creación
-
-async function handleCreateService(event) {
+async function handleSignup(event) {
     event.preventDefault();
     
-    // Prevenir doble-click o creaciones concurrentes
-    if (isCreatingService) {
-        console.log('⚠️ Creación ya en progreso, ignorando...');
+    const name = document.getElementById('signup-name').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-confirm').value;
+    
+    // Validar contraseñas
+    if (password !== confirm) {
+        showMessage('Las contraseñas no coinciden', 'error');
         return;
     }
     
-    isCreatingService = true;
-    
     try {
-        const name = document.getElementById('service-name').value.trim();
-        const type = document.getElementById('service-type').value;
-        const description = document.getElementById('service-description').value.trim();
-        const customCode = document.getElementById('custom-code').value.trim();
+        showMessage('Registrando usuario...', 'success');
         
-        console.log('📝 Datos del formulario:', {
-            name,
-            type,
-            description,
-            customCodeLength: customCode.length,
-            hasCustomCode: !!customCode
+        const response = await fetch(`${API_URL}/auth/signup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password, name })
         });
         
-        if (!name) {
-            showError('El nombre del servicio es requerido');
-            return;
-        }
-        
-        // Validar nombre
-        if (!/^[a-zA-Z0-9-_]+$/.test(name)) {
-            showError('El nombre solo puede contener letras, números, guiones y guiones bajos');
-            return;
-        }
-        
-        // Validar código personalizado si se proporcionó
-        if (customCode) {
-            console.log('🔍 Código personalizado recibido (' + customCode.length + ' caracteres)');
-            console.log('📄 Código:', customCode.substring(0, 100) + '...');
-        } else {
-            console.log('ℹ️ No se proporcionó código personalizado, se usará plantilla por defecto');
-        }
-        
-        showLoading(true);
-        
-        try {
-            console.log('🏗️ Creando microservicio:', { name, type, description, hasCustomCode: !!customCode });
-            
-            const payload = { 
-                name, 
-                type, 
-                config: { description }
-            };
-            
-            // Agregar código personalizado si existe
-            if (customCode) {
-                payload.custom_code = customCode;
-                console.log('📝 Incluyendo código personalizado (' + customCode.length + ' caracteres)');
-            }
-            
-            const response = await apiRequest('/api/microservices', {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            
-            console.log('📡 Respuesta del servidor:', response.status, response.statusText);
-        
-        // Intentar parsear la respuesta JSON
-        let data;
-        try {
-            data = await response.json();
-            console.log('📄 Datos de respuesta:', data);
-        } catch (parseError) {
-            console.error('❌ Error parseando respuesta JSON:', parseError);
-            showError('Error: Respuesta inválida del servidor');
-            return;
-        }
-        
-        if (response.ok && data.success) {
-            showSuccess(`Microservicio '${name}' creado exitosamente`);
-            clearCreateForm();
-            refreshServices();
-            loadTestServices();
-            
-            console.log('✅ Microservicio creado exitosamente');
-            
-        } else {
-            const errorMessage = data.error || data.message || `Error ${response.status}: ${response.statusText}`;
-            showError(errorMessage);
-            console.error('❌ Error creando microservicio:', errorMessage, data);
-        }
-        
-        } catch (error) {
-            showError('Error de conexión: ' + error.message);
-            console.error('❌ Error de conexión:', error);
-        } finally {
-            showLoading(false);
-            isCreatingService = false; // Liberar el flag
-        }
-    } catch (error) {
-        // Captura errores en validación
-        showError('Error de validación: ' + error.message);
-        isCreatingService = false;
-    }
-}
-
-async function deleteService(serviceId, serviceName) {
-    try {
-        console.log('🎯 INICIO deleteService - Parámetros recibidos:');
-        console.log('   serviceId tipo:', typeof serviceId, 'valor:', serviceId);
-        console.log('   serviceName tipo:', typeof serviceName, 'valor:', serviceName);
-        
-        // Verificar si serviceName es literalmente la cadena "null" o "undefined"
-        if (serviceName === 'null' || serviceName === 'undefined') {
-            console.warn('⚠️ serviceName contiene cadena literal null/undefined, corrigiendo...');
-            serviceName = serviceId;
-        }
-        
-        // Asegurar que tenemos un nombre válido
-        const finalServiceName = serviceName || serviceId || 'Sin nombre';
-        console.log('📝 Nombre final calculado:', finalServiceName);
-        
-        // Configurar acción pendiente para el modal
-        pendingAction = {
-            action: 'delete',
-            serviceId: serviceId,
-            serviceName: finalServiceName
-        };
-        
-        console.log('📝 Acción pendiente creada:', JSON.stringify(pendingAction, null, 2));
-        
-        // Usar el nombre seguro directamente en lugar de acceder a pendingAction
-        console.log('🖼️ Llamando showModal con título y mensaje...');
-        showModal(
-            'Confirmar Eliminación',
-            `¿Está seguro de eliminar el microservicio '${finalServiceName}'? Esta acción no se puede deshacer.`
-        );
-        console.log('✅ showModal ejecutado sin errores');
-        
-    } catch (error) {
-        console.error('❌ ERROR EN deleteService:', error);
-        console.error('❌ Stack trace:', error.stack);
-        showError('Error interno: ' + error.message);
-    }
-}
-
-async function executeDelete() {
-    try {
-        console.log('🎯 INICIO executeDelete, pendingAction:', pendingAction);
-        
-        if (!pendingAction || pendingAction.action !== 'delete') {
-            console.error('❌ No hay acción pendiente de eliminación');
-            showError('Error: No se puede proceder con la eliminación');
-            return;
-        }
-        
-        // Verificar que pendingAction tenga las propiedades necesarias
-        if (!pendingAction.serviceId) {
-            console.error('❌ pendingAction no tiene serviceId');
-            showError('Error: Datos de eliminación incompletos');
-            return;
-        }
-        
-        // Guardar datos INMEDIATAMENTE antes de cualquier operación asíncrona
-        const actionData = {
-            serviceId: pendingAction.serviceId,
-            serviceName: pendingAction.serviceName || pendingAction.serviceId || 'Sin nombre',
-            originalPendingAction: JSON.parse(JSON.stringify(pendingAction))
-        };
-        
-        console.log('💾 Datos guardados para eliminación:', actionData);
-        
-        showLoading(true);
-        
-        try {
-            console.log('🗑️ Eliminando microservicio:', actionData);
-            
-            const response = await apiRequest(`/api/microservices/${actionData.serviceId}`, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                showSuccess(`Microservicio '${actionData.serviceName}' eliminado exitosamente`);
-                refreshServices();
-                loadTestServices(); // Actualizar lista de pruebas
-                
-                console.log('✅ Microservicio eliminado exitosamente');
-                
-            } else {
-                throw new Error(data.error || 'Error desconocido eliminando microservicio');
-            }
-            
-        } catch (networkError) {
-            console.error('❌ Error de red en executeDelete:', networkError);
-            showError('Error de conexión: ' + networkError.message);
-        }
-        
-    } catch (error) {
-        console.error('❌ ERROR GENERAL en executeDelete:', error);
-        console.error('❌ Stack trace completo:', error.stack);
-        showError('Error interno: ' + error.message);
-    } finally {
-        showLoading(false);
-        pendingAction = null;
-        console.log('🧹 pendingAction limpiado');
-    }
-}
-
-async function refreshServices() {
-    try {
-        console.log('🔄 Actualizando lista de servicios...');
-        
-        const response = await apiRequest('/api/microservices');
         const data = await response.json();
         
-        if (response.ok && data.microservices) {
-            activeServices = data.microservices;
-            renderServices(data.microservices);
-            updateStats(data.microservices);
-            
-            // Actualizar también la lista de servicios para pruebas
-            loadTestServices();
-            
-            console.log(`✅ ${data.microservices.length} servicios cargados`);
-            
+        if (response.ok) {
+            showMessage('¡Registro exitoso! Ya puedes iniciar sesión', 'success');
+            // Cambiar a tab de login
+            document.getElementById('signup-form').reset();
+            showAuthTab('login');
+            document.querySelector('.auth-tab:first-child').click();
         } else {
-            showError('Error cargando servicios');
-            console.error('❌ Error cargando servicios:', data.error);
+            showMessage(data.error || 'Error al registrar usuario', 'error');
         }
-        
     } catch (error) {
-        showError('Error de conexión al cargar servicios');
-        console.error('❌ Error de conexión:', error);
+        console.error('Error en signup:', error);
+        showMessage('Error de conexión. Verifica que el servidor esté activo.', 'error');
     }
 }
 
-function renderServices(services) {
-    const container = document.getElementById('services-list');
+async function logout() {
+    try {
+        if (accessToken) {
+            await fetch(`${API_URL}/auth/logout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error en logout:', error);
+    } finally {
+        // Detener auto-actualización
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+        }
+        clearSession();
+        showAuthSection();
+        showMessage('Sesión cerrada correctamente', 'success');
+    }
+}
+
+function clearSession() {
+    accessToken = null;
+    refreshToken = null;
+    currentUser = null;
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+}
+
+// ==================== GESTIÓN DE PROYECTOS ====================
+
+async function loadProjects() {
+    try {
+        const response = await fetch(`${API_URL}/projects/`, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            projects = data.projects;
+            displayProjects();
+            updateStats();
+        } else if (response.status === 401) {
+            // Token expirado, intentar refresh
+            await refreshAccessToken();
+            loadProjects(); // Reintentar
+        } else {
+            showMessage('Error al cargar proyectos', 'error');
+        }
+    } catch (error) {
+        console.error('Error cargando proyectos:', error);
+        showMessage('Error de conexión al cargar proyectos', 'error');
+    }
+}
+
+async function handleCreateProject(event) {
+    event.preventDefault();
     
-    console.log('🎨 Renderizando servicios:', services.length);
+    const nombre = document.getElementById('project-name').value;
+    const repo_url = document.getElementById('repo-url').value;
     
-    if (services.length === 0) {
-        container.innerHTML = '<div class="loading">No hay microservicios activos</div>';
+    try {
+        showMessage('Creando proyecto...', 'success');
+        
+        const response = await fetch(`${API_URL}/projects/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ nombre, repo_url })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage('¡Proyecto creado! El despliegue iniciará pronto', 'success');
+            document.getElementById('create-project-form').reset();
+            toggleCreateForm();
+            loadProjects();
+        } else {
+            showMessage(data.error || 'Error al crear proyecto', 'error');
+        }
+    } catch (error) {
+        console.error('Error creando proyecto:', error);
+        showMessage('Error de conexión al crear proyecto', 'error');
+    }
+}
+
+async function deleteProject(projectId, projectName) {
+    if (!confirm(`¿Estás seguro de eliminar el proyecto "${projectName}"?`)) {
         return;
     }
+    
+    try {
+        const response = await fetch(`${API_URL}/projects/${projectId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        
+        if (response.ok) {
+            showMessage('Proyecto eliminado correctamente', 'success');
+            loadProjects();
+        } else {
+            const data = await response.json();
+            showMessage(data.error || 'Error al eliminar proyecto', 'error');
+        }
+    } catch (error) {
+        console.error('Error eliminando proyecto:', error);
+        showMessage('Error de conexión al eliminar proyecto', 'error');
+    }
+}
 
-    container.innerHTML = services.map((service, index) => {
-        console.log(`📋 Servicio ${index}:`, JSON.stringify(service, null, 2));
+async function rebuildProject(projectId, projectName) {
+    if (!confirm(`¿Reconstruir el proyecto "${projectName}" desde GitHub?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/projects/${projectId}/rebuild`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
         
-        const statusClass = service.status === 'running' ? 'running' : 
-                           service.is_static ? 'static' : 'stopped';
+        if (response.ok) {
+            showMessage('Reconstrucción iniciada', 'success');
+            loadProjects();
+        } else {
+            const data = await response.json();
+            showMessage(data.error || 'Error al reconstruir proyecto', 'error');
+        }
+    } catch (error) {
+        console.error('Error reconstruyendo proyecto:', error);
+        showMessage('Error de conexión al reconstruir proyecto', 'error');
+    }
+}
+
+function displayProjects() {
+    const container = document.getElementById('projects-list');
+    
+    if (projects.length === 0) {
+        container.innerHTML = '<div class="empty-state">No tienes proyectos aún. ¡Crea tu primer proyecto!</div>';
+        return;
+    }
+    
+    container.innerHTML = projects.map(project => {
+        // Usar real_status si existe, sino usar status de la BD
+        const status = project.real_status || project.status;
         
-        // Sanitizar el nombre para evitar problemas con comillas
-        const safeName = service.name ? service.name.replace(/'/g, "\\'") : service.id;
-        const safeId = service.id ? service.id.replace(/'/g, "\\'") : '';
+        const statusClass = status === 'running' ? 'status-running' : 
+                          status === 'exited' || status === 'stopped' ? 'status-stopped' : 
+                          status === 'building' ? 'status-building' : 
+                          status === 'pending' ? 'status-pending' : 
+                          status === 'not_found' ? 'status-error' : 'status-error';
         
-        console.log(`🔍 Para servicio ${index}: safeName="${safeName}", safeId="${safeId}"`);
+        // Traducir estados
+        const statusText = status === 'running' ? 'corriendo' :
+                          status === 'exited' ? 'detenido' :
+                          status === 'building' ? 'construyendo' :
+                          status === 'pending' ? 'pendiente' :
+                          status === 'not_found' ? 'no encontrado' : status;
+        
+        // URL desde el backend
+        const url = project.url;
         
         return `
-            <div class="service-item">
-                <div class="service-header">
-                    <div class="service-info">
-                        <h4>${service.name}</h4>
-                        <p><strong>Tipo:</strong> ${service.type}</p>
-                        <p><strong>Puerto:</strong> ${service.port || 'N/A'}</p>
-                        <p><strong>Estado:</strong> <span class="service-status ${statusClass}">${service.status}</span></p>
-                        ${service.external_endpoint ? `
-                            <p><strong>URL:</strong> <a href="${service.external_endpoint}" target="_blank" class="service-link">${service.external_endpoint}</a></p>
-                        ` : ''}
-                        <p><strong>Creado:</strong> ${new Date(service.created_at).toLocaleString()}</p>
-                        ${service.config?.description ? `
-                            <p><strong>Descripción:</strong> ${service.config.description}</p>
-                        ` : ''}
-                    </div>
+            <div class="project-card">
+                <div class="project-header">
+                    <h4>${project.nombre}</h4>
+                    <span class="project-status ${statusClass}">${statusText}</span>
                 </div>
-                
-                <div class="service-actions">
-                    ${service.external_endpoint ? `
-                        <a href="${service.external_endpoint}" target="_blank" class="btn btn-outline">
-                            Ver Servicio
-                        </a>
-                    ` : ''}
-                    ${!service.is_static ? `
-                        <button onclick="deleteService('${safeId}', '${safeName}')" class="btn btn-danger">
-                            Eliminar
-                        </button>
-                    ` : `
-                        <span class="service-status static">Servicio Base</span>
-                    `}
+                <div class="project-body">
+                    <p><strong>Repositorio:</strong> <a href="${project.repo_url}" target="_blank">${project.repo_url}</a></p>
+                    ${url ? `<p><strong>URL:</strong> <a href="${url}" target="_blank" class="btn-link">${url}</a></p>` : ''}
+                    ${project.external_port ? `<p><strong>Puerto:</strong> ${project.external_port}</p>` : ''}
+                    <p><strong>Creado:</strong> ${new Date(project.created_at).toLocaleString()}</p>
+                </div>
+                <div class="project-actions">
+                    ${url ? `<a href="${url}" target="_blank" class="btn btn-secondary">Abrir Sitio</a>` : ''}
+                    <button onclick="rebuildProject('${project._id}', '${project.nombre}')" class="btn btn-secondary">Reconstruir</button>
+                    <button onclick="deleteProject('${project._id}', '${project.nombre}')" class="btn btn-danger">Eliminar</button>
                 </div>
             </div>
         `;
     }).join('');
 }
 
-function updateStats(services) {
-    const totalServices = services.length;
-    const runningServices = services.filter(s => s.status === 'running').length;
-    const customServices = services.filter(s => !s.is_static).length;
+function updateStats() {
+    const total = projects.length;
+    // Usar real_status si existe, sino status
+    const running = projects.filter(p => {
+        const status = p.real_status || p.status;
+        return status === 'running';
+    }).length;
+    const stopped = projects.filter(p => {
+        const status = p.real_status || p.status;
+        return status === 'stopped' || status === 'exited';
+    }).length;
     
-    document.getElementById('total-services').textContent = totalServices;
-    document.getElementById('running-services').textContent = runningServices;
-    document.getElementById('custom-services').textContent = customServices;
+    document.getElementById('total-projects').textContent = total;
+    document.getElementById('running-projects').textContent = running;
+    document.getElementById('stopped-projects').textContent = stopped;
 }
 
-// ==================== HERRAMIENTA DE PRUEBAS ====================
+// ==================== HELPERS ====================
 
-function loadTestServices() {
-    const select = document.getElementById('test-service');
-    select.innerHTML = '<option value="">Seleccione un servicio</option>';
+function useTemplate(template) {
+    const templates = {
+        'static': 'https://github.com/tu-usuario/template-static-site',
+        'react': 'https://github.com/tu-usuario/template-react-app',
+        'flask': 'https://github.com/tu-usuario/template-flask-blog'
+    };
     
-    activeServices.forEach(service => {
-        if (service.external_endpoint || service.endpoint) {
-            const option = document.createElement('option');
-            option.value = service.external_endpoint || service.endpoint;
-            option.textContent = `${service.name} (${service.type})`;
-            // Guardar el tipo de servicio como data attribute
-            option.setAttribute('data-service-type', service.type);
-            option.setAttribute('data-service-name', service.name);
-            select.appendChild(option);
-        }
-    });
+    document.getElementById('repo-url').value = templates[template] || '';
+    showMessage(`Template "${template}" seleccionado. Clona este repo y personalízalo.`, 'success');
 }
 
-function updateTestEndpoint() {
-    const select = document.getElementById('test-service');
-    const endpoint = document.getElementById('test-endpoint');
-    
-    if (select.value) {
-        const selectedOption = select.options[select.selectedIndex];
-        const serviceType = selectedOption.getAttribute('data-service-type');
-        const serviceName = selectedOption.getAttribute('data-service-name');
-        
-        // Establecer endpoint según el tipo de servicio
-        if (serviceType === 'filter' || serviceName === 'filter-service') {
-            endpoint.value = '/filter';
-        } else if (serviceType === 'aggregate' || serviceName === 'aggregate-service') {
-            endpoint.value = '/aggregate';
-        } else {
-            endpoint.value = '/process'; // Para servicios personalizados
-        }
-    } else {
-        endpoint.value = '';
-    }
+function getUsernameFromEmail() {
+    if (!currentUser || !currentUser.email) return 'usuario';
+    return currentUser.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-async function testEndpoint() {
-    const serviceUrl = document.getElementById('test-service').value;
-    const endpoint = document.getElementById('test-endpoint').value;
-    const dataText = document.getElementById('test-data').value;
-    
-    if (!serviceUrl) {
-        showError('Seleccione un servicio');
-        return;
-    }
-    
-    let data = {};
-    if (dataText.trim()) {
-        try {
-            data = JSON.parse(dataText);
-        } catch (e) {
-            showError('Datos JSON inválidos');
-            return;
-        }
-    }
-    
-    const url = serviceUrl + endpoint;
-    showLoading(true);
-    
+async function refreshAccessToken() {
     try {
-        console.log('🧪 Probando endpoint:', url);
-        
-        const response = await fetch(url, {
+        const response = await fetch(`${API_URL}/auth/refresh`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentToken}`
+            headers: {
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify({ refreshToken })
         });
         
-        const result = await response.json();
-        
-        const resultDiv = document.getElementById('test-result');
-        const outputDiv = document.getElementById('test-output');
-        
-        outputDiv.innerHTML = `
-            <h4>Resultado de la Prueba:</h4>
-            <p><strong>URL:</strong> ${url}</p>
-            <p><strong>Método:</strong> POST</p>
-            <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
-            <p><strong>Tiempo:</strong> ${new Date().toLocaleTimeString()}</p>
-            <div class="test-output">
-                <pre>${JSON.stringify(result, null, 2)}</pre>
-            </div>
-        `;
-        
-        resultDiv.classList.remove('hidden');
-        
         if (response.ok) {
-            showSuccess('Prueba ejecutada exitosamente');
+            const data = await response.json();
+            accessToken = data.accessToken;
+            localStorage.setItem('accessToken', accessToken);
         } else {
-            showError('La prueba retornó un error');
+            clearSession();
+            showAuthSection();
         }
-        
-        console.log('✅ Prueba completada');
-        
     } catch (error) {
-        showError('Error ejecutando prueba: ' + error.message);
-        console.error('❌ Error en prueba:', error);
-    } finally {
-        showLoading(false);
+        console.error('Error refrescando token:', error);
+        clearSession();
+        showAuthSection();
     }
 }
-
-// ==================== GESTIÓN DE FORMULARIOS ====================
 
 function toggleCreateForm() {
     const form = document.getElementById('create-form');
     const btn = document.getElementById('toggle-create-btn');
     
-    if (form.classList.contains('hidden')) {
-        form.classList.remove('hidden');
-        btn.textContent = 'Ocultar Formulario';
-    } else {
-        form.classList.add('hidden');
-        btn.textContent = 'Mostrar Formulario';
-        clearCreateForm();
-    }
+    form.classList.toggle('hidden');
+    btn.textContent = form.classList.contains('hidden') ? 
+        'Mostrar Formulario' : 'Ocultar Formulario';
 }
 
-function toggleTestForm() {
-    const form = document.getElementById('test-form');
-    const btn = document.getElementById('toggle-test-btn');
-    
-    if (form.classList.contains('hidden')) {
-        form.classList.remove('hidden');
-        btn.textContent = 'Ocultar Herramienta';
-        loadTestServices();
-    } else {
-        form.classList.add('hidden');
-        btn.textContent = 'Mostrar Herramienta';
-        clearTestForm();
-    }
+function showAuthSection() {
+    document.getElementById('auth-section').classList.remove('hidden');
+    document.getElementById('dashboard-section').classList.add('hidden');
+    document.getElementById('user-info').classList.add('hidden');
 }
 
-function clearCreateForm() {
-    document.getElementById('create-service-form').reset();
-    document.getElementById('service-name').value = '';
-    document.getElementById('service-type').value = 'filter';
-    document.getElementById('service-description').value = '';
+function showDashboard() {
+    document.getElementById('auth-section').classList.add('hidden');
+    document.getElementById('dashboard-section').classList.remove('hidden');
+    document.getElementById('user-info').classList.remove('hidden');
     
-    // Limpiar el editor de código
-    const codeEditor = document.getElementById('custom-code');
-    if (codeEditor) {
-        codeEditor.value = '';
-    }
-}
-
-function clearTestForm() {
-    document.getElementById('test-service').value = '';
-    document.getElementById('test-endpoint').value = '';
-    document.getElementById('test-data').value = '{"criteria": "active", "limit": 10}';
-    document.getElementById('test-result').classList.add('hidden');
-}
-
-// ==================== HERRAMIENTAS DE GESTIÓN ====================
-
-function exportConfiguration() {
-    const config = {
-        services: activeServices,
-        user: currentUser,
-        exported_at: new Date().toISOString(),
-        total_services: activeServices.length,
-        running_services: activeServices.filter(s => s.status === 'running').length
-    };
-    
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `microservices_config_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    showSuccess('Configuración exportada exitosamente');
-    console.log('📥 Configuración exportada');
-}
-
-function showSystemLogs() {
-    const output = document.getElementById('management-output');
-    const content = document.getElementById('management-content');
-    
-    const logs = [
-        `[${new Date().toISOString()}] INFO: Sistema iniciado`,
-        `[${new Date().toISOString()}] INFO: Usuario ${currentUser} conectado`,
-        `[${new Date().toISOString()}] INFO: ${activeServices.length} microservicios activos`,
-        `[${new Date().toISOString()}] INFO: Servicios: ${activeServices.map(s => s.name).join(', ')}`,
-        `[${new Date().toISOString()}] INFO: Dashboard funcionando correctamente`
-    ];
-    
-    content.innerHTML = `
-        <h4>Logs del Sistema</h4>
-        <div class="test-output">
-            <pre>${logs.join('\n')}</pre>
-        </div>
-        <button onclick="hideManagementOutput()" class="btn btn-secondary" style="margin-top: 15px;">
-            Cerrar
-        </button>
-    `;
-    
-    output.classList.remove('hidden');
-    console.log('📋 Logs mostrados');
-}
-
-function showStatistics() {
-    const output = document.getElementById('management-output');
-    const content = document.getElementById('management-content');
-    
-    const stats = {
-        total_services: activeServices.length,
-        running_services: activeServices.filter(s => s.status === 'running').length,
-        stopped_services: activeServices.filter(s => s.status === 'stopped').length,
-        static_services: activeServices.filter(s => s.is_static).length,
-        custom_services: activeServices.filter(s => !s.is_static).length,
-        service_types: activeServices.reduce((acc, s) => {
-            acc[s.type] = (acc[s.type] || 0) + 1;
-            return acc;
-        }, {}),
-        last_updated: new Date().toISOString(),
-        user: currentUser
-    };
-    
-    content.innerHTML = `
-        <h4>Estadísticas Detalladas</h4>
-        <div class="test-output">
-            <pre>${JSON.stringify(stats, null, 2)}</pre>
-        </div>
-        <button onclick="hideManagementOutput()" class="btn btn-secondary" style="margin-top: 15px;">
-            Cerrar
-        </button>
-    `;
-    
-    output.classList.remove('hidden');
-    console.log('📊 Estadísticas mostradas');
-}
-
-function hideManagementOutput() {
-    document.getElementById('management-output').classList.add('hidden');
-}
-
-// ==================== MODAL ====================
-
-function showModal(title, message) {
-    document.getElementById('modal-title').textContent = title;
-    document.getElementById('modal-message').textContent = message;
-    document.getElementById('modal').classList.remove('hidden');
-}
-
-function closeModal() {
-    console.log('🚪 closeModal llamado, pendingAction actual:', pendingAction);
-    document.getElementById('modal').classList.add('hidden');
-    // No limpiar pendingAction aquí, se limpia después de ejecutar la acción
-}
-
-function confirmAction() {
-    console.log('🔄 confirmAction ejecutada, pendingAction:', pendingAction);
-    
-    if (pendingAction && pendingAction.action === 'delete') {
-        console.log('✅ Acción de eliminación confirmada');
-        closeModal();
-        executeDelete();
-    } else {
-        console.log('❌ No hay acción de eliminación válida:', pendingAction);
-        closeModal();
-        // Limpiar pendingAction solo si no es una acción válida
-        pendingAction = null;
-    }
-}
-
-// ==================== AUTO-REFRESH ====================
-
-function startAutoRefresh() {
-    if (refreshTimer) {
-        clearInterval(refreshTimer);
+    // Mostrar info del usuario
+    if (currentUser) {
+        document.getElementById('user-email').textContent = currentUser.email || currentUser.uid || 'Usuario';
     }
     
-    refreshTimer = setInterval(() => {
-        if (currentToken) {
-            console.log('🔄 Auto-refresh de servicios...');
-            refreshServices();
-        }
-    }, CONFIG.REFRESH_INTERVAL);
+    // Cargar proyectos
+    loadProjects();
+    
+    // Iniciar auto-actualización cada 5 segundos
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    autoRefreshInterval = setInterval(() => {
+        loadProjects();
+    }, 5000);
 }
 
-// ==================== INICIALIZACIÓN ====================
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📱 Inicializando dashboard...');
+function showMessage(message, type) {
+    const msgElement = type === 'error' ? 
+        document.getElementById('error-msg') : 
+        document.getElementById('success-msg');
     
-    // Auto-login si hay token guardado
-    const savedToken = localStorage.getItem('roble_token');
-    const savedUser = localStorage.getItem('roble_user');
+    msgElement.textContent = message;
+    msgElement.classList.remove('hidden');
     
-    if (savedToken && savedUser) {
-        console.log('🔑 Token encontrado, iniciando sesión automática...');
-        currentToken = savedToken;
-        currentUser = savedUser;
-        showDashboard();
-    }
-    
-    // Event listeners para formularios
-    document.getElementById('login-form').addEventListener('submit', handleLogin);
-    document.getElementById('create-service-form').addEventListener('submit', handleCreateService);
-    
-    // Event listeners para teclas
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeModal();
-        }
-        if (e.key === 'Enter' && e.target.id === 'password') {
-            handleLogin(e);
-        }
-    });
-    
-    // Event listener para test service change
-    document.getElementById('test-service').addEventListener('change', updateTestEndpoint);
-    
-    console.log('✅ Dashboard inicializado correctamente');
-});
-
-// ==================== MANEJO DE ERRORES GLOBALES ====================
-
-window.addEventListener('error', function(e) {
-    console.error('❌ Error global capturado:', e.error);
-    console.error('❌ Archivo:', e.filename);
-    console.error('❌ Línea:', e.lineno);
-    console.error('❌ Columna:', e.colno);
-    console.error('❌ Stack trace completo:', e.error?.stack);
-    
-    // Si el error contiene "serviceName", mostrar información específica
-    if (e.error?.message?.includes('serviceName')) {
-        console.error('🔍 ERROR ESPECÍFICO DE serviceName detectado!');
-        console.error('🔍 pendingAction actual:', pendingAction);
-        console.error('🔍 activeServices:', activeServices);
-    }
-    
-    showError('Ha ocurrido un error inesperado: ' + (e.error?.message || 'Error desconocido'));
-});
-
-window.addEventListener('unhandledrejection', function(e) {
-    console.error('❌ Promise rechazado:', e.reason);
-    console.error('❌ Stack trace:', e.reason?.stack);
-    
-    if (e.reason?.message?.includes('serviceName')) {
-        console.error('🔍 PROMISE REJECTION con serviceName detectado!');
-        console.error('🔍 pendingAction actual:', pendingAction);
-    }
-    
-    showError('Error de conexión con el servidor: ' + (e.reason?.message || 'Error desconocido'));
-});
-
-// ==================== UTILIDADES ADICIONALES ====================
-
-// Función para validar JSON
-function isValidJSON(str) {
-    try {
-        JSON.parse(str);
-        return true;
-    } catch (e) {
-        return false;
-    }
+    setTimeout(() => {
+        msgElement.classList.add('hidden');
+    }, 5000);
 }
-
-// Función para formatear fechas
-function formatDate(dateString) {
-    return new Date(dateString).toLocaleString('es-CO', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-console.log('🎉 Dashboard ROBLE completamente cargado y listo para usar');

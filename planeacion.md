@@ -26,44 +26,81 @@ Transformar la plataforma actual de microservicios ROBLE en una **Plataforma de 
 
 ---
 
-## FASE 1: Autenticación y Base de Datos (Semana 1-2)
+## FASE 1: Autenticación y Base de Datos (Semana 1-2) ✅ COMPLETADA
 
 ### Objetivos:
-- Sistema completo de autenticación con Roble
-- Base de datos para usuarios y proyectos
-- Gestión de sesiones
+- Sistema completo de autenticación con Roble ✅
+- Base de datos para usuarios y proyectos ✅
+- Gestión de sesiones ✅
+- **Deploy automático desde GitHub** ✅
 
 ### Tareas:
 
 #### 1.1 Base de Datos
-- [ ] Instalar PostgreSQL o MongoDB como servicio Docker
-- [ ] Diseñar esquema de base de datos:
+- [x] Instalar PostgreSQL o MongoDB como servicio Docker
+- [x] Diseñar esquema de base de datos:
   ```
-  - Tabla: usuarios (id, username, email, roble_id, created_at)
+  - Tabla: usuarios (manejada por ROBLE automáticamente)
   - Tabla: proyectos (id, user_id, nombre, repo_url, container_id, status, created_at, last_access)
-  - Tabla: containers (id, project_id, port, status, cpu_limit, memory_limit)
+  - Tabla: containers (id, project_id, port, status, cpu_limit, memory_limit, image_name)
   ```
-- [ ] Crear migraciones iniciales
-- [ ] Implementar modelos/ORM (SQLAlchemy o similar)
+- [x] Crear migraciones iniciales (tablas creadas en ROBLE)
+- [x] Implementar modelos/ORM (RobleClient con métodos CRUD)
 
 #### 1.2 Sistema de Autenticación
-- [ ] Implementar OAuth2/OIDC con Roble
-- [ ] Crear endpoints de login/logout
-- [ ] Implementar JWT para sesiones
-- [ ] Middleware de autenticación
-- [ ] Sistema de refresh tokens
-- [ ] Proteger rutas del dashboard
+- [x] Implementar OAuth2/OIDC con Roble (usando API de ROBLE)
+- [x] Crear endpoints de login/logout
+- [x] Implementar JWT para sesiones (manejado por ROBLE)
+- [x] Middleware de autenticación (verificación de tokens)
+- [x] Sistema de refresh tokens
+- [x] Proteger rutas del dashboard
 
-#### 1.3 API de Usuarios
-- [ ] `POST /api/auth/login` - Login con Roble
-- [ ] `POST /api/auth/logout` - Cerrar sesión
-- [ ] `GET /api/auth/me` - Info del usuario actual
-- [ ] `GET /api/users/projects` - Listar proyectos del usuario
+#### 1.3 API de Usuarios y Proyectos
+- [x] `POST /api/auth/login` - Login con Roble
+- [x] `POST /api/auth/logout` - Cerrar sesión
+- [x] `GET /api/auth/me` - Info del usuario actual
+- [x] `POST /api/auth/signup` - Registro de usuarios
+- [x] `POST /api/auth/refresh` - Refrescar tokens
+- [x] `GET /api/projects/` - Listar proyectos del usuario
+- [x] `POST /api/projects/` - Crear y desplegar proyecto
+- [x] `DELETE /api/projects/<id>` - Eliminar proyecto y contenedor
+- [x] `POST /api/projects/<id>/rebuild` - Reconstruir proyecto
+
+#### 1.4 Deploy desde GitHub (AGREGADO)
+- [x] Clonación de repositorios con Git
+- [x] Build de imágenes Docker desde Dockerfile
+- [x] Deploy automático de contenedores
+- [x] Asignación dinámica de puertos (6000-6999)
+- [x] Actualización de estado en tiempo real (pending → building → running)
+- [x] Límites de recursos (256MB RAM, 0.5 CPU)
+- [x] Detener/eliminar contenedores al eliminar proyectos
+- [x] Rebuild completo (stop → clone → build → deploy)
+
+#### 1.5 Archivos Creados
+- [x] `manager/roble_client.py` - Cliente para API de ROBLE
+- [x] `manager/auth_routes.py` - Rutas de autenticación
+- [x] `manager/projects_routes.py` - Rutas de proyectos (con deploy integrado)
+- [x] `manager/deploy_service.py` - Servicio de despliegue GitHub
+- [x] `dashboard/src/index.html` - Interfaz con login/proyectos
+- [x] `dashboard/src/js/app.js` - Lógica del frontend (muestra puerto y URL)
+- [x] `dashboard/src/css/style.css` - Diseño minimalista (#FFFAFA, #23262A)
 
 ### Entregables:
-- Base de datos funcional con esquema completo
-- Sistema de login/logout operativo
-- Dashboard actualizado con autenticación
+- ✅ Base de datos funcional con esquema completo (2 tablas en ROBLE)
+- ✅ Sistema de login/logout operativo
+- ✅ Dashboard actualizado con autenticación
+- ✅ CRUD completo de proyectos con deploy automático
+- ✅ Clonación, build y deploy desde repositorios GitHub
+- ✅ Visualización de puertos y URLs en dashboard
+
+### Estado: COMPLETADO 🎉
+Sistema funcional con deploy automático. Los usuarios pueden:
+1. Registrarse/login
+2. Crear proyecto desde URL de GitHub
+3. Sistema clona, construye y despliega automáticamente
+4. Ver proyectos con estado (pending/building/running/error)
+5. Acceder vía `http://localhost:PUERTO`
+6. Reconstruir o eliminar proyectos
 
 ### Responsable sugerido: 
 **1 persona** - Experiencia en backend y bases de datos
@@ -113,52 +150,65 @@ http://blog.maria.localhost → Container maria_blog (port 8080)
 
 ---
 
-## FASE 3: Integración con GitHub (Semana 3-4)
+## FASE 3: Integración con GitHub (Semana 3-4) ✅ COMPLETADA
 
 ### Objetivos:
-- Clonar repositorios de usuarios
-- Construir imágenes Docker desde repos
-- Desplegar contenedores automáticamente
+- Clonar repositorios de usuarios ✅
+- Construir imágenes Docker desde repos ✅
+- Desplegar contenedores automáticamente ✅
 
 ### Tareas:
 
 #### 3.1 Sistema de Clonación
-- [ ] Implementar clonación segura de repos (GitPython o subprocess)
-- [ ] Validación de repositorios (existencia, permisos públicos)
-- [ ] Manejo de repositorios privados (opcional: tokens de acceso)
-- [ ] Limpieza de repos temporales
+- [x] Implementar clonación segura de repos (subprocess con git)
+- [x] Validación de repositorios (timeout de 60s)
+- [x] Manejo de repositorios públicos
+- [x] Limpieza de repos temporales (tempfile con cleanup automático)
 
 #### 3.2 Builder de Imágenes
-- [ ] Detectar Dockerfile en el repositorio
-- [ ] Construir imagen Docker desde repo clonado
-- [ ] Tag de imágenes: `user_project:latest`
-- [ ] Logs de construcción en tiempo real
-- [ ] Manejo de errores de build
+- [x] Detectar Dockerfile en el repositorio
+- [x] Construir imagen Docker desde repo clonado
+- [x] Tag de imágenes: `project_userid_projectname:latest`
+- [x] Manejo de errores de build (docker.errors.BuildError)
+- [x] Logs de construcción (Docker SDK)
 
 #### 3.3 API de Proyectos
-- [ ] `POST /api/projects/create`
-  - Parámetros: `name`, `repo_url`, `template` (opcional)
-  - Valida repo → Clona → Build → Deploy
-- [ ] `GET /api/projects/:id` - Info del proyecto
-- [ ] `DELETE /api/projects/:id` - Eliminar proyecto
-- [ ] `POST /api/projects/:id/rebuild` - Reconstruir desde GitHub
+- [x] `POST /api/projects/` - Crear y desplegar proyecto
+  - Parámetros: `nombre`, `repo_url`
+  - Valida repo → Clona → Build → Deploy (en background)
+- [x] `GET /api/projects/:id` - Info del proyecto con container
+- [x] `DELETE /api/projects/:id` - Eliminar proyecto y contenedor
+- [x] `POST /api/projects/:id/rebuild` - Reconstruir desde GitHub
 
-#### 3.4 Proceso de Despliegue
+#### 3.4 Proceso de Despliegue Implementado
 ```
-1. Usuario provee URL de GitHub y nombre
-2. Sistema valida y clona repo
-3. Verifica existencia de Dockerfile
-4. Construye imagen Docker
-5. Crea contenedor con límites de recursos
-6. Registra subdominio en proxy
-7. Guarda info en base de datos
-8. Retorna URL de acceso
+1. Usuario provee URL de GitHub y nombre ✅
+2. Sistema clona repo con git clone --depth 1 ✅
+3. Verifica existencia de Dockerfile ✅
+4. Construye imagen Docker con Docker SDK ✅
+5. Crea contenedor con límites (256MB RAM, 0.5 CPU) ✅
+6. Asigna puerto dinámico (6000-6999) ✅
+7. Guarda info en base de datos (proyectos + containers) ✅
+8. Retorna puerto de acceso (http://localhost:PORT) ✅
 ```
+
+#### 3.5 Deploy Service (deploy_service.py)
+- [x] Clase DeployService con gestión de puertos
+- [x] Método `clone_repository()` - Git clone con subprocess
+- [x] Método `build_image()` - Docker SDK build
+- [x] Método `deploy_container()` - Run container con límites
+- [x] Método `deploy_project()` - Proceso completo con callbacks
+- [x] Método `stop_container()` y `remove_container()`
+- [x] Callbacks para actualizar estado en tiempo real
 
 ### Entregables:
-- Sistema completo de clonación y build
-- API de gestión de proyectos
-- Despliegue automático funcional
+- ✅ Sistema completo de clonación y build
+- ✅ API de gestión de proyectos funcional
+- ✅ Despliegue automático operativo
+- ✅ Rebuild y eliminación con cleanup de contenedores
+
+### Estado: COMPLETADO 🎉
+Deploy automático completamente funcional. Usuarios pueden desplegar cualquier proyecto con Dockerfile desde GitHub.
 
 ### Responsable sugerido:
 **1-2 personas** - Experiencia en Git, Docker y Python

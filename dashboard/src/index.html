@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Microservicios ROBLE</title>
+    <title>Plataforma de Hosting ROBLE</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>Dashboard de Microservicios ROBLE</h1>
+            <h1>Plataforma de Hosting ROBLE</h1>
             <div id="user-info" class="user-info hidden">
                 <span>Usuario: <strong id="user-email"></strong></span>
-                <button onclick="logout()" class="btn btn-logout">Cerrar Sesión</button>
+                <button onclick="logout()" class="btn btn-logout">Cerrar Sesion</button>
             </div>
         </header>
 
@@ -21,21 +21,54 @@
         <div id="error-msg" class="message error hidden"></div>
         <div id="success-msg" class="message success hidden"></div>
 
-        <!-- Login Section -->
-        <div id="login-section" class="section">
-            <div class="login-card">
-                <h2>Iniciar Sesión</h2>
-                <form id="login-form" onsubmit="handleLogin(event)">
-                    <div class="form-group">
-                        <label for="email">Email ROBLE:</label>
-                        <input type="email" id="email" placeholder="usuario@uninorte.edu.co" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Contraseña:</label>
-                        <input type="password" id="password" placeholder="Tu contraseña ROBLE" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
-                </form>
+        <!-- Login/Signup Section -->
+        <div id="auth-section" class="section">
+            <div class="auth-container">
+                <!-- Tabs -->
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="showAuthTab('login')">Iniciar Sesión</button>
+                    <button class="auth-tab" onclick="showAuthTab('signup')">Registrarse</button>
+                </div>
+
+                <!-- Login Form -->
+                <div id="login-tab" class="auth-tab-content">
+                    <h2>Iniciar Sesión</h2>
+                    <form id="login-form" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label for="login-email">Email:</label>
+                            <input type="email" id="login-email" placeholder="usuario@uninorte.edu.co" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Contraseña:</label>
+                            <input type="password" id="login-password" placeholder="Tu contraseña" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                    </form>
+                </div>
+
+                <!-- Signup Form -->
+                <div id="signup-tab" class="auth-tab-content hidden">
+                    <h2>Crear Cuenta</h2>
+                    <form id="signup-form" onsubmit="handleSignup(event)">
+                        <div class="form-group">
+                            <label for="signup-name">Nombre Completo:</label>
+                            <input type="text" id="signup-name" placeholder="Juan Pérez" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-email">Email:</label>
+                            <input type="email" id="signup-email" placeholder="usuario@uninorte.edu.co" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-password">Contraseña:</label>
+                            <input type="password" id="signup-password" placeholder="Mínimo 6 caracteres" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-confirm">Confirmar Contraseña:</label>
+                            <input type="password" id="signup-confirm" placeholder="Repite tu contraseña" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Registrarse</button>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -45,192 +78,75 @@
             <!-- Stats Panel -->
             <div class="stats-panel">
                 <div class="stat-card">
-                    <h3 id="total-services">0</h3>
-                    <p>Servicios Totales</p>
+                    <h3 id="total-projects">0</h3>
+                    <p>Proyectos Totales</p>
                 </div>
                 <div class="stat-card">
-                    <h3 id="running-services">0</h3>
-                    <p>Servicios Activos</p>
+                    <h3 id="running-projects">0</h3>
+                    <p>Proyectos Activos</p>
                 </div>
                 <div class="stat-card">
-                    <h3 id="custom-services">0</h3>
-                    <p>Servicios Creados</p>
+                    <h3 id="stopped-projects">0</h3>
+                    <p>Proyectos Detenidos</p>
                 </div>
             </div>
 
-            <!-- Create Service Card -->
+            <!-- Create Project Card -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Crear Nuevo Microservicio</h3>
+                    <h3>Crear Nuevo Proyecto</h3>
                     <button onclick="toggleCreateForm()" class="btn btn-secondary" id="toggle-create-btn">
                         Mostrar Formulario
                     </button>
                 </div>
                 
                 <div id="create-form" class="form-container hidden">
-                    <form id="create-service-form" onsubmit="handleCreateService(event)">
+                    <form id="create-project-form" onsubmit="handleCreateProject(event)">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="service-name">Nombre del Servicio:</label>
-                                <input type="text" id="service-name" placeholder="mi-filtro-personalizado" required>
-                                <small>Solo letras, números, guiones y guiones bajos</small>
+                                <label for="project-name">Nombre del Proyecto:</label>
+                                <input type="text" id="project-name" placeholder="mi-sitio-web" required pattern="[a-z0-9\-]+" title="Solo letras minúsculas, números y guiones">
+                                <small>Solo letras minúsculas, números y guiones (sin espacios)</small>
                             </div>
                             <div class="form-group">
-                                <label for="service-type">Tipo de Servicio:</label>
-                                <select id="service-type" required>
-                                    <option value="filter">Filter - Filtrado de datos</option>
-                                    <option value="aggregate">Aggregate - Agregación de datos</option>
-                                    <option value="custom">Custom - Lógica personalizada</option>
-                                </select>
+                                <label for="repo-url">URL del Repositorio GitHub:</label>
+                                <input type="url" id="repo-url" placeholder="https://github.com/usuario/repo" required>
+                                <small>El repositorio debe contener un Dockerfile</small>
                             </div>
                         </div>
                         
                         <div class="form-group">
-                            <label for="service-description">Descripción (opcional):</label>
-                            <textarea id="service-description" 
-                                placeholder="Descripción de lo que hace este microservicio" 
-                                rows="3"></textarea>
+                            <label>Templates Disponibles:</label>
+                            <div class="templates-info">
+                                <p><strong>Opcion 1:</strong> Usa uno de nuestros templates y personalizalo:</p>
+                                <ul>
+                                    <li><a href="#" onclick="useTemplate('static')">Sitio Estatico</a> (HTML + CSS + JS)</li>
+                                    <li><a href="#" onclick="useTemplate('react')">React App</a> (React + Vite)</li>
+                                    <li><a href="#" onclick="useTemplate('flask')">Flask Blog</a> (Python + Flask)</li>
+                                </ul>
+                                <p><strong>Opcion 2:</strong> Usa tu propio repositorio con Dockerfile</p>
+                            </div>
                         </div>
 
-                        <!-- Editor de código personalizado SIMPLE -->
-                        <div class="form-group">
-                            <label for="custom-code">Código Python/Flask (opcional):</label>
-                            <textarea id="custom-code" 
-                                placeholder="# Escribe tu código Python aquí (opcional)
-# Si no escribes código, se usará una plantilla básica
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app)
-
-@app.route('/health', methods=['GET'])
-def health():
-    return jsonify({'status': 'healthy'})
-
-@app.route('/process', methods=['POST'])
-def process_data():
-    data = request.json
-    # Tu lógica aquí
-    return jsonify({'result': 'processed', 'data': data})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)"
-                                rows="15" 
-                                style="font-family: monospace; font-size: 14px;"></textarea>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Crear Microservicio</button>
-                            <button type="button" onclick="clearCreateForm()" class="btn btn-secondary">Limpiar</button>
-                        </div>
+                        <button type="submit" class="btn btn-primary">Crear Proyecto</button>
                     </form>
                 </div>
             </div>
 
-            <!-- Services List Card -->
+            <!-- Projects List -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Microservicios Activos</h3>
-                    <button onclick="refreshServices()" class="btn btn-secondary">
-                        <span class="refresh-icon">⟳</span> Actualizar
+                    <h3>Mis Proyectos</h3>
+                    <button onclick="loadProjects()" class="btn btn-secondary">
+                        Actualizar
                     </button>
                 </div>
-                
-                <div id="services-list" class="services-grid">
-                    <div class="loading">Cargando servicios...</div>
+                <div id="projects-list" class="projects-list">
+                    <div class="loading">Cargando proyectos...</div>
                 </div>
             </div>
 
-            <!-- Test Tool Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Herramienta de Pruebas</h3>
-                    <button onclick="toggleTestForm()" class="btn btn-secondary" id="toggle-test-btn">
-                        Mostrar Herramienta
-                    </button>
-                </div>
-                
-                <div id="test-form" class="form-container hidden">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="test-service">Seleccionar Servicio:</label>
-                            <select id="test-service" onchange="updateTestEndpoint()">
-                                <option value="">Seleccione un servicio</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="test-endpoint">Endpoint:</label>
-                            <input type="text" id="test-endpoint" placeholder="/process" readonly>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="test-data">Datos de Prueba (JSON):</label>
-                        <textarea id="test-data" 
-                            placeholder='{"criteria": "active", "limit": 10}' 
-                            rows="5"></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button onclick="testEndpoint()" class="btn btn-primary">Ejecutar Prueba</button>
-                        <button onclick="clearTestForm()" class="btn btn-secondary">Limpiar</button>
-                    </div>
-                    
-                    <div id="test-result" class="test-result hidden">
-                        <h4>Resultado de la Prueba:</h4>
-                        <div id="test-output" class="test-output"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Management Tools Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Gestión y Herramientas</h3>
-                </div>
-                
-                <div class="management-tools">
-                    <button onclick="exportConfiguration()" class="btn btn-outline">
-                        📥 Exportar Configuración
-                    </button>
-                    <button onclick="showSystemLogs()" class="btn btn-outline">
-                        📋 Ver Logs del Sistema
-                    </button>
-                    <button onclick="showStatistics()" class="btn btn-outline">
-                        📊 Estadísticas Detalladas
-                    </button>
-                </div>
-                
-                <div id="management-output" class="management-output hidden">
-                    <div id="management-content"></div>
-                </div>
-            </div>
         </div>
-    </div>
-
-    <!-- Modal para confirmaciones -->
-    <div id="modal" class="modal hidden">
-        <div class="modal-overlay" onclick="closeModal()"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-title">Confirmar Acción</h3>
-                <button onclick="closeModal()" class="modal-close">×</button>
-            </div>
-            <div class="modal-body">
-                <p id="modal-message">¿Está seguro de realizar esta acción?</p>
-            </div>
-            <div class="modal-footer">
-                <button onclick="confirmAction()" class="btn btn-danger">Confirmar</button>
-                <button onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Loading Spinner -->
-    <div id="loading-spinner" class="loading-spinner hidden">
-        <div class="spinner"></div>
-        <p>Procesando...</p>
     </div>
 
     <script src="js/app.js"></script>

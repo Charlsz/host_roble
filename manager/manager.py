@@ -1,6 +1,6 @@
 """
-Manager de Microservicios ROBLE - Versión Completa
-Gestiona microservicios con Docker SDK para crear contenedores reales
+Manager de Microservicios ROBLE - Plataforma de Hosting
+Gestiona microservicios y proyectos web con Docker SDK
 """
 import os
 import logging
@@ -13,6 +13,10 @@ from flask_cors import CORS
 from datetime import datetime
 import json
 
+# Importar blueprints de autenticación y proyectos
+from auth_routes import auth_bp
+from projects_routes import projects_bp
+
 # Configuración
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:8080", "http://127.0.0.1:8080"], 
@@ -20,6 +24,11 @@ CORS(app, origins=["http://localhost:8080", "http://127.0.0.1:8080"],
      allow_headers=['Content-Type', 'Authorization'])
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Registrar blueprints
+app.register_blueprint(auth_bp)
+app.register_blueprint(projects_bp)
+logger.info("✅ Blueprints de autenticación y proyectos registrados")
 
 # Variables de entorno ROBLE
 ROBLE_BASE_HOST = os.getenv('ROBLE_BASE_HOST', 'https://roble-api.openlab.uninorte.edu.co')
