@@ -131,7 +131,7 @@ El proyecto estará disponible en:
 
 ## Arquitectura
 
-![Arquitectura de la Plataforma](pruebas/diagrama-arquitectura.png)
+![Arquitectura de la Plataforma](diagrama-arquitectura.png)
 
 ### Componentes principales
 
