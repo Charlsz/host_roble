@@ -129,36 +129,9 @@ El proyecto estará disponible en:
 - http://nombreProyecto.tuUsuario.localhost
 - http://localhost:PUERTO_ASIGNADO (entre 7000-7999)
 
-## Arquitectura del Sistema
+## Arquitectura
 
-```
-┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│  Dashboard  │─────→│   Manager   │─────→│    Roble    │
-│ (puerto 8080│      │ (puerto 5000│      │  (Auth API) │
-└─────────────┘      └─────────────┘      └─────────────┘
-                            │
-                            ↓
-                     ┌─────────────┐
-                     │Docker Engine│
-                     │             │
-                     │ ┌─────────┐ │
-                     │ │Project 1│ │
-                     │ │(7000)   │ │
-                     │ └─────────┘ │
-                     │ ┌─────────┐ │
-                     │ │Project 2│ │
-                     │ │(7001)   │ │
-                     │ └─────────┘ │
-                     └─────────────┘
-                            ↑
-                            │
-                     ┌─────────────┐
-                     │Nginx Proxy  │
-                     │(puerto 80)  │
-                     │Subdomain    │
-                     │routing      │
-                     └─────────────┘
-```
+![Arquitectura de la Plataforma](pruebas/diagrama-arquitectura.png)
 
 ### Componentes principales
 
