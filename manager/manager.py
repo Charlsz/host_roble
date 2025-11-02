@@ -16,6 +16,7 @@ import json
 # Importar blueprints de autenticación y proyectos
 from auth_routes import auth_bp
 from projects_routes import projects_bp
+from activity_monitor import ActivityMonitor
 
 # Configuración
 app = Flask(__name__)
@@ -41,6 +42,18 @@ try:
 except Exception as e:
     logger.error(f"❌ Error conectando con Docker: {e}")
     docker_client = None
+
+# Inicializar monitor de actividad (30 minutos = 1800 segundos)
+activity_monitor = None
+if docker_client:
+    activity_monitor = ActivityMonitor(docker_client, inactivity_timeout=1800)
+    activity_monitor.start_monitoring()
+    logger.info("✅ Monitor de actividad iniciado (timeout: 30 minutos)")
+
+def get_activity_monitor():
+    """Obtiene la instancia del monitor de actividad"""
+    return activity_monitor
+
 
 def cleanup_dynamic_containers():
     """Limpia contenedores dinámicos al inicio para evitar conflictos de puertos"""

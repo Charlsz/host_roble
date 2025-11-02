@@ -47,6 +47,7 @@ services:
       - ROBLE_CONTRACT=${ROBLE_CONTRACT}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # Acceso a Docker
+      - ./nginx/conf.d:/nginx_configs  # Directorio compartido para configuraciones Nginx
     networks:
       - microservices_network
     privileged: true  # Permisos para manejar Docker
@@ -63,6 +64,21 @@ services:
       - microservices_network
     depends_on:
       - manager
+
+  # Nginx Reverse Proxy - Enrutamiento de subdominios
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - microservices_network
+    depends_on:
+      - manager
+    restart: unless-stopped
 
   # Filter Service - Microservicio de Filtrado
   filter-service:

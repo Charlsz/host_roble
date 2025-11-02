@@ -16,6 +16,7 @@ COPY roble_client.py .
 COPY auth_routes.py .
 COPY projects_routes.py .
 COPY deploy_service.py .
+COPY activity_monitor.py .
 
 EXPOSE 5000
 

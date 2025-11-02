@@ -313,6 +313,13 @@ function displayProjects() {
         
         // URL desde el backend
         const url = project.url;
+        const url_direct = project.url_direct;
+        const subdomain = project.subdomain;
+        
+        // Info de inactividad
+        const inactiveMinutes = project.inactive_minutes || 0;
+        const inactiveWarning = inactiveMinutes > 20 ? ' ⚠️ Se apagará pronto' : '';
+        const inactiveDisplay = status === 'running' ? `<p><strong>Inactivo:</strong> ${inactiveMinutes} min${inactiveWarning}</p>` : '';
         
         return `
             <div class="project-card">
@@ -322,12 +329,14 @@ function displayProjects() {
                 </div>
                 <div class="project-body">
                     <p><strong>Repositorio:</strong> <a href="${project.repo_url}" target="_blank">${project.repo_url}</a></p>
-                    ${url ? `<p><strong>URL:</strong> <a href="${url}" target="_blank" class="btn-link">${url}</a></p>` : ''}
+                    ${subdomain ? `<p><strong>Subdominio:</strong> <a href="${url}" target="_blank" class="btn-link" onclick="trackActivity('${project.container_name}')">${subdomain}</a></p>` : ''}
+                    ${url_direct ? `<p><strong>URL Directa:</strong> <a href="${url_direct}" target="_blank" class="btn-link" onclick="trackActivity('${project.container_name}')">${url_direct}</a></p>` : ''}
                     ${project.external_port ? `<p><strong>Puerto:</strong> ${project.external_port}</p>` : ''}
+                    ${inactiveDisplay}
                     <p><strong>Creado:</strong> ${new Date(project.created_at).toLocaleString()}</p>
                 </div>
                 <div class="project-actions">
-                    ${url ? `<a href="${url}" target="_blank" class="btn btn-secondary">Abrir Sitio</a>` : ''}
+                    ${url ? `<a href="${url}" target="_blank" class="btn btn-secondary" onclick="trackActivity('${project.container_name}')">Abrir Sitio</a>` : ''}
                     <button onclick="rebuildProject('${project._id}', '${project.nombre}')" class="btn btn-secondary">Reconstruir</button>
                     <button onclick="deleteProject('${project._id}', '${project.nombre}')" class="btn btn-danger">Eliminar</button>
                 </div>
@@ -431,6 +440,24 @@ function showDashboard() {
     autoRefreshInterval = setInterval(() => {
         loadProjects();
     }, 5000);
+}
+
+// Función para registrar actividad de un contenedor
+async function trackActivity(containerName) {
+    if (!containerName) return;
+    
+    try {
+        await fetch(`${API_URL}/api/projects/activity/${containerName}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        // No mostrar mensaje, es transparente para el usuario
+    } catch (error) {
+        console.log('Error tracking activity:', error);
+        // No fallar, solo logear
+    }
 }
 
 function showMessage(message, type) {

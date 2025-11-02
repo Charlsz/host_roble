@@ -1,0 +1,16 @@
+# Template para proyectos desplegados
+# Este archivo será copiado y modificado dinámicamente por el manager
+
+# Ejemplo de configuración para un proyecto:
+# server {
+#     listen 80;
+#     server_name proyecto1.localhost;
+#
+#     location / {
+#         proxy_pass http://project_usuario_proyecto1:80;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#     }
+# }

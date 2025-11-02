@@ -100,6 +100,11 @@ def get_projects():
         
         # Agregar info de containers a cada proyecto con estado REAL de Docker
         docker_client = docker.from_env()
+        
+        # Obtener monitor de actividad
+        from manager import get_activity_monitor
+        monitor = get_activity_monitor()
+        
         for project in active_projects:
             container_id = project.get('container_id')
             
@@ -113,15 +118,37 @@ def get_projects():
                         container = containers[0]
                         container_id = container.id
                         project['container_id'] = container_id
-                        logger.info(f"Contenedor huérfano encontrado y asociado: {container.name} -> {project.get('nombre')}")
+                        logger.info(f"Contenedor huérfano encontrado y asociado: {container.name} -> {project.get('nombre')}, ID: {container_id}")
                 except Exception as e:
                     logger.error(f"Error buscando contenedor huérfano: {e}")
+            
+            logger.info(f"🔍 Procesando proyecto {project.get('nombre')}, container_id={container_id}")
             
             if container_id:
                 try:
                     # Obtener estado real del contenedor desde Docker
                     container = docker_client.containers.get(container_id)
                     project['real_status'] = container.status  # running, exited, etc.
+                    project['container_name'] = container.name  # Nombre del contenedor
+                    
+                    # Obtener tiempo de inactividad si el monitor está disponible
+                    if monitor and container.status == 'running':
+                        # Inicializar timestamp si no existe
+                        if container.name not in monitor.last_activity:
+                            logger.info(f"📊 Inicializando timestamp para {container.name}")
+                            monitor.update_activity(container.name)
+                        
+                        inactive_seconds = monitor.get_inactive_time(container.name)
+                        project['inactive_time'] = inactive_seconds
+                        project['inactive_minutes'] = int(inactive_seconds / 60)
+                        logger.info(f"📊 Proyecto {project.get('nombre')}: inactivo {project['inactive_minutes']} min")
+                    else:
+                        project['inactive_time'] = 0
+                        project['inactive_minutes'] = 0
+                        if not monitor:
+                            logger.warning("⚠️ Monitor no disponible")
+                        if container.status != 'running':
+                            logger.info(f"📊 Contenedor {container.name} no está corriendo: {container.status}")
                     
                     # Obtener puerto externo si está corriendo
                     if container.status == 'running':
@@ -133,25 +160,37 @@ def get_projects():
                                 external_port = mappings[0]['HostPort']
                                 break
                         project['external_port'] = external_port
-                        project['url'] = f"http://localhost:{external_port}" if external_port else None
+                        
+                        # URLs: subdomain (principal) y puerto (fallback)
+                        project['subdomain'] = f"{project.get('nombre')}.localhost"
+                        project['url'] = f"http://{project['subdomain']}"
+                        project['url_direct'] = f"http://localhost:{external_port}" if external_port else None
                     else:
                         project['external_port'] = None
                         project['url'] = None
+                        project['url_direct'] = None
+                        project['subdomain'] = None
                         
                 except docker.errors.NotFound:
                     # El contenedor no existe en Docker
                     project['real_status'] = 'not_found'
                     project['external_port'] = None
                     project['url'] = None
+                    project['url_direct'] = None
+                    project['subdomain'] = None
                 except Exception as e:
                     logger.error(f"Error obteniendo info de contenedor {container_id}: {e}")
                     project['real_status'] = 'error'
                     project['external_port'] = None
                     project['url'] = None
+                    project['url_direct'] = None
+                    project['subdomain'] = None
             else:
                 project['real_status'] = project.get('status', 'pending')
                 project['external_port'] = None
                 project['url'] = None
+                project['url_direct'] = None
+                project['subdomain'] = None
         
         return jsonify({
             'success': True,
@@ -228,6 +267,15 @@ def create_project():
                             'image_name': result['image_name']
                         }
                         roble.insert_records('containers', [container_data], access_token)
+                        
+                        # Actualizar container_id en el proyecto
+                        roble.update_record(
+                            'proyectos',
+                            project_id,
+                            {'container_id': result['container_id']},
+                            access_token=access_token
+                        )
+                        
                         logger.info(f"✅ Deploy completado: {nombre} en puerto {result['port']}")
                     except Exception as e:
                         logger.error(f"Error guardando container info: {e}")
@@ -332,6 +380,10 @@ def delete_project(project_id):
                 for container in containers:
                     container.remove(force=True)
                     logger.info(f"✅ Contenedor eliminado: {container_name}")
+                
+                # Eliminar configuración de Nginx
+                deploy_service.remove_nginx_config(nombre)
+                
             except Exception as e:
                 logger.warning(f"Error limpiando contenedores: {e}")
         
@@ -387,8 +439,22 @@ def rebuild_project(project_id):
         roble.update_project_status(project_id, 'building', access_token=access_token)
         
         # Detener contenedor anterior si existe
-        if project.get('container_id') and deploy_service:
-            deploy_service.remove_container(project['container_id'])
+        if deploy_service:
+            # Buscar contenedor por nombre si no tenemos container_id
+            try:
+                import docker
+                docker_client = docker.from_env()
+                container_name = f"project_{user_id.replace('@', '_').replace('.', '_')}_{project['nombre']}"
+                
+                # Intentar obtener el contenedor
+                try:
+                    container = docker_client.containers.get(container_name)
+                    logger.info(f"🗑️ Eliminando contenedor anterior: {container_name}")
+                    deploy_service.remove_container(container.id)
+                except docker.errors.NotFound:
+                    logger.info(f"No se encontró contenedor previo para {container_name}")
+            except Exception as e:
+                logger.error(f"Error buscando contenedor previo: {e}")
         
         # Rebuild en background
         if deploy_service:
@@ -411,26 +477,33 @@ def rebuild_project(project_id):
                 
                 if result['success']:
                     # Actualizar container info
-                    roble.update_record(
-                        'containers',
-                        {'project_id': project_id},
-                        {
-                            'port': result['port'],
-                            'status': 'running',
-                            'image_name': result['image_name']
-                        },
-                        access_token
-                    )
+                    try:
+                        roble.update_record(
+                            'containers',
+                            {'project_id': project_id},
+                            {
+                                'port': result['port'],
+                                'status': 'running',
+                                'image_name': result['image_name']
+                            },
+                            access_token=access_token
+                        )
+                    except Exception as e:
+                        logger.error(f"Error actualizando containers: {e}")
                     
-                    roble.update_record(
-                        'proyectos',
-                        project_id,
-                        {'container_id': result['container_id']},
-                        access_token
-                    )
+                    try:
+                        roble.update_record(
+                            'proyectos',
+                            project_id,
+                            {'container_id': result['container_id']},
+                            access_token=access_token
+                        )
+                    except Exception as e:
+                        logger.error(f"Error actualizando proyecto: {e}")
+                        
                     logger.info(f"✅ Rebuild completado: {project['nombre']}")
                 else:
-                    roble.update_project_status(project_id, 'error', access_token)
+                    roble.update_project_status(project_id, 'error', access_token=access_token)
                     logger.error(f"❌ Rebuild falló: {result['message']}")
             
             import threading
@@ -448,3 +521,43 @@ def rebuild_project(project_id):
     except Exception as e:
         logger.error(f"Error al reconstruir proyecto: {e}")
         return jsonify({'error': str(e)}), 500
+
+@projects_bp.route('/activity/<container_name>', methods=['POST'])
+def track_activity(container_name):
+    """
+    Endpoint para registrar actividad de un contenedor
+    Nginx llamará a este endpoint cuando se acceda a un proyecto
+    """
+    try:
+        # Importar aquí para evitar import circular
+        from manager import get_activity_monitor
+        
+        monitor = get_activity_monitor()
+        if not monitor:
+            return jsonify({'success': True, 'message': 'Monitor no disponible'}), 200
+        
+        # Actualizar actividad
+        monitor.update_activity(container_name)
+        
+        # Intentar reiniciar si está detenido
+        restarted = monitor.restart_container_if_stopped(container_name)
+        
+        if restarted:
+            logger.info(f"🔄 Contenedor {container_name} fue reiniciado automáticamente")
+            return jsonify({
+                'success': True,
+                'message': 'Container restarted',
+                'restarted': True
+            }), 200
+        
+        return jsonify({
+            'success': True,
+            'message': 'Activity tracked',
+            'restarted': False
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error tracking activity: {e}")
+        # No fallar, solo logear
+        return jsonify({'success': True, 'message': 'Activity tracking failed'}), 200
+
