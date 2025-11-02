@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates - ROBLE Host</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .templates-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .intro-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .intro-section h1 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .intro-section p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .steps {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .steps h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .step {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+
+        .step strong {
+            color: #2c3e50;
+        }
+
+        .template-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .template-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .template-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 15px;
+        }
+
+        .template-icon {
+            font-size: 48px;
+            margin-right: 15px;
+        }
+
+        .template-title h2 {
+            color: #2c3e50;
+            margin: 0 0 5px 0;
+        }
+
+        .template-subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .template-description {
+            margin-bottom: 20px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .template-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .template-info p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .template-info strong {
+            color: #2c3e50;
+        }
+
+        .file-section {
+            margin-top: 20px;
+        }
+
+        .file-section h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .file-content {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .file-content pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .file-name {
+            background: #34495e;
+            color: #ecf0f1;
+            padding: 8px 15px;
+            border-radius: 6px 6px 0 0;
+            font-family: monospace;
+            font-size: 13px;
+            margin-bottom: -6px;
+            display: inline-block;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #2980b9;
+        }
+
+        .copy-btn.copied {
+            background: #27ae60;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .btn-secondary:hover {
+            background: #d5dbdb;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="templates-container">
+        <a href="index.html" class="back-link">← Volver al Dashboard</a>
+
+        <div class="intro-section">
+            <h1>📦 Templates de Proyectos</h1>
+            <p>Estos son los templates base que puedes usar para crear tu proyecto. Cada template incluye todos los archivos necesarios para desplegar tu sitio web en la plataforma ROBLE Host.</p>
+            
+            <div class="steps">
+                <h3>¿Cómo usar estos templates?</h3>
+                <div class="step">
+                    <strong>Paso 1:</strong> Elige uno de los templates a continuación según el tipo de proyecto que quieras crear.
+                </div>
+                <div class="step">
+                    <strong>Paso 2:</strong> Crea un nuevo repositorio en tu cuenta de GitHub (ej: "mi-proyecto").
+                </div>
+                <div class="step">
+                    <strong>Paso 3:</strong> Copia los archivos del template que elegiste a tu repositorio. Puedes usar el botón "Copiar" de cada archivo y pegarlo en GitHub directamente (crear archivo → pegar contenido).
+                </div>
+                <div class="step">
+                    <strong>Paso 4:</strong> Personaliza el contenido según tus necesidades (modifica HTML, CSS, código, etc.).
+                </div>
+                <div class="step">
+                    <strong>Paso 5:</strong> Haz commit de los cambios en tu repositorio.
+                </div>
+                <div class="step">
+                    <strong>Paso 6:</strong> Ve al <a href="index.html" style="color: #3498db;">Dashboard</a>, crea un nuevo proyecto y pega la URL de tu repositorio de GitHub.
+                </div>
+                <div class="step">
+                    <strong>Paso 7:</strong> ¡Tu proyecto se desplegará automáticamente! Podrás acceder en <code>http://nombreProyecto.tuUsuario.localhost</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template 1: Estático -->
+        <div class="template-card">
+            <div class="template-header">
+                <div class="template-icon">🌐</div>
+                <div class="template-title">
+                    <h2>Template Estático</h2>
+                    <div class="template-subtitle">HTML + CSS + JavaScript</div>
+                </div>
+            </div>
+
+            <div class="template-description">
+                <p>Sitio web estático básico perfecto para landing pages, portafolios, páginas personales o documentación. Usa Nginx para servir los archivos.</p>
+            </div>
+
+            <div class="template-info">
+                <p><strong>Ideal para:</strong> Landing pages, portafolios, sitios informativos</p>
+                <p><strong>Puerto interno:</strong> 80</p>
+                <p><strong>Tecnología:</strong> Nginx Alpine</p>
+            </div>
+
+            <div class="file-section">
+                <h4>Archivos necesarios:</h4>
+                
+                <div class="file-name">📄 index.html</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'static-html')">Copiar</button>
+                    <pre id="static-html">&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width,initial-scale=1"&gt;
+  &lt;title&gt;Plantilla Estática - ROBLE&lt;/title&gt;
+  &lt;style&gt;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 600px; text-align: center; }
+    h1 { color: #333; margin-bottom: 20px; }
+    p { color: #666; line-height: 1.6; margin-bottom: 30px; }
+    a { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 25px; transition: all 0.3s; }
+    a:hover { background: #764ba2; transform: translateY(-2px); }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="card"&gt;
+    &lt;h1&gt;🎉 Plantilla Estática&lt;/h1&gt;
+    &lt;p&gt;Este es un sitio estático de ejemplo. Puedes modificar este archivo HTML y agregar tus propios estilos CSS y scripts JavaScript.&lt;/p&gt;
+    &lt;a href="/"&gt;Volver al inicio&lt;/a&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+                </div>
+
+                <div class="file-name">🐳 Dockerfile</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'static-dockerfile')">Copiar</button>
+                    <pre id="static-dockerfile">FROM nginx:alpine
+COPY index.html /usr/share/nginx/html/index.html
+EXPOSE 80</pre>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="index.html" class="btn btn-primary">Ir a Desplegar</a>
+            </div>
+        </div>
+
+        <!-- Template 2: React -->
+        <div class="template-card">
+            <div class="template-header">
+                <div class="template-icon">⚛️</div>
+                <div class="template-title">
+                    <h2>Template React</h2>
+                    <div class="template-subtitle">React con CDN (sin build)</div>
+                </div>
+            </div>
+
+            <div class="template-description">
+                <p>Aplicación React ligera que carga React desde CDN. No requiere Node.js ni proceso de build, perfecto para prototipos y aplicaciones simples.</p>
+            </div>
+
+            <div class="template-info">
+                <p><strong>Ideal para:</strong> Prototipos interactivos, SPAs simples, demos</p>
+                <p><strong>Puerto interno:</strong> 80</p>
+                <p><strong>Tecnología:</strong> React 18 + Nginx Alpine</p>
+            </div>
+
+            <div class="file-section">
+                <h4>Archivos necesarios:</h4>
+                
+                <div class="file-name">📄 index.html</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'react-html')">Copiar</button>
+                    <pre id="react-html">&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width,initial-scale=1"&gt;
+  &lt;title&gt;Plantilla React (CDN)&lt;/title&gt;
+  &lt;script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"&gt;&lt;/script&gt;
+  &lt;script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"&gt;&lt;/script&gt;
+  &lt;style&gt;body{font-family:Arial,Helvetica,sans-serif;background:#fff;margin:0;padding:24px}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div id="root"&gt;&lt;/div&gt;
+  &lt;script&gt;
+    const e = React.createElement;
+    function App(){
+      return e('div', {style:{maxWidth:760,margin:'0 auto',textAlign:'center'}}, [
+        e('h1', null, 'Plantilla React (CDN)'),
+        e('p', null, 'Ejemplo simple de React servido como sitio estático usando CDN.'),
+        e('button', {onClick:()=&gt;alert('Hola desde React!')}, 'Presióname')
+      ]);
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+                </div>
+
+                <div class="file-name">🐳 Dockerfile</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'react-dockerfile')">Copiar</button>
+                    <pre id="react-dockerfile">FROM nginx:alpine
+COPY index.html /usr/share/nginx/html/index.html
+EXPOSE 80</pre>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="index.html" class="btn btn-primary">Ir a Desplegar</a>
+            </div>
+        </div>
+
+        <!-- Template 3: Flask -->
+        <div class="template-card">
+            <div class="template-header">
+                <div class="template-icon">🐍</div>
+                <div class="template-title">
+                    <h2>Template Flask</h2>
+                    <div class="template-subtitle">Python + Flask + Gunicorn</div>
+                </div>
+            </div>
+
+            <div class="template-description">
+                <p>API REST o aplicación web con Flask y Gunicorn. Perfecto para backends, APIs y microservicios en Python.</p>
+            </div>
+
+            <div class="template-info">
+                <p><strong>Ideal para:</strong> APIs REST, microservicios, backends Python</p>
+                <p><strong>Puerto interno:</strong> 5000</p>
+                <p><strong>Tecnología:</strong> Python 3.11 + Flask + Gunicorn</p>
+            </div>
+
+            <div class="file-section">
+                <h4>Archivos necesarios:</h4>
+                
+                <div class="file-name">📄 app.py</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'flask-app')">Copiar</button>
+                    <pre id="flask-app">from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return '&lt;h1&gt;Plantilla Flask&lt;/h1&gt;&lt;p&gt;Hola desde Flask! Esta es una plantilla mínima.&lt;/p&gt;'
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)</pre>
+                </div>
+
+                <div class="file-name">📄 requirements.txt</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'flask-requirements')">Copiar</button>
+                    <pre id="flask-requirements">Flask==2.2.5
+gunicorn==20.1.0</pre>
+                </div>
+
+                <div class="file-name">🐳 Dockerfile</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'flask-dockerfile')">Copiar</button>
+                    <pre id="flask-dockerfile">FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py ./
+EXPOSE 5000
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]</pre>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="index.html" class="btn btn-primary">Ir a Desplegar</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function copyCode(button, elementId) {
+            const code = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ Copiado';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar:', err);
+                alert('No se pudo copiar. Por favor, selecciona y copia manualmente.');
+            });
+        }
+    </script>
+</body>
+</html>
