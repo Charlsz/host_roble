@@ -315,6 +315,25 @@
 COPY index.html /usr/share/nginx/html/index.html
 EXPOSE 80</pre>
                 </div>
+
+                <div class="file-name">🐳 docker-compose.yml</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'static-compose')">Copiar</button>
+                    <pre id="static-compose">version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    container_name: static-template
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M</pre>
+                </div>
             </div>
 
             <div class="action-buttons">
@@ -382,6 +401,25 @@ EXPOSE 80</pre>
 COPY index.html /usr/share/nginx/html/index.html
 EXPOSE 80</pre>
                 </div>
+
+                <div class="file-name">🐳 docker-compose.yml</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'react-compose')">Copiar</button>
+                    <pre id="react-compose">version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    container_name: react-template
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M</pre>
+                </div>
             </div>
 
             <div class="action-buttons">
@@ -443,6 +481,27 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py ./
 EXPOSE 5000
 CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]</pre>
+                </div>
+
+                <div class="file-name">🐳 docker-compose.yml</div>
+                <div class="file-content">
+                    <button class="copy-btn" onclick="copyCode(this, 'flask-compose')">Copiar</button>
+                    <pre id="flask-compose">version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:5000"
+    container_name: flask-template
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    environment:
+      - FLASK_ENV=production</pre>
                 </div>
             </div>
 

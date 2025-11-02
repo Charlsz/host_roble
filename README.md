@@ -15,13 +15,23 @@ Plataforma de hosting de páginas web basada en contenedores Docker. Permite a u
 
 ## 📦 Templates Disponibles
 
-Los siguientes templates están listos para ser clonados, modificados y desplegados:
+Los siguientes templates dockerizados están listos para ser clonados, modificados y desplegados:
 
-1. **[Template Estático](./templates/static_template/)** - HTML + CSS + JS básico
-2. **[Template React](./templates/react_template/)** - React con CDN (sin build)
-3. **[Template Flask](./templates/flask_template/)** - Python + Flask + Gunicorn
+### Enlaces a Templates:
 
-📖 **Instrucciones detalladas**: [templates/README.md](./templates/README.md)
+1. **[Template Estático](https://github.com/Charlsz/host_roble/tree/main/templates/static_template)** - Sitio estático (HTML + CSS + JS)
+   - Incluye: `index.html`, `Dockerfile`, `docker-compose.yml`
+   - Puerto: 80 (Nginx)
+
+2. **[Template React](https://github.com/Charlsz/host_roble/tree/main/templates/react_template)** - React con CDN (sin build)
+   - Incluye: `index.html`, `Dockerfile`, `docker-compose.yml`
+   - Puerto: 80 (Nginx)
+
+3. **[Template Flask](https://github.com/Charlsz/host_roble/tree/main/templates/flask_template)** - Python + Flask + Gunicorn
+   - Incluye: `app.py`, `requirements.txt`, `Dockerfile`, `docker-compose.yml`
+   - Puerto: 5000 (Gunicorn)
+
+📖 **Instrucciones completas**: [templates/README.md](./templates/README.md) | 🎯 **Guía visual**: [Página de Templates](http://localhost:8080/templates.html)
 
 ## 🏗️ Arquitectura
 
@@ -203,17 +213,47 @@ POST   /api/projects/activity/<name> # Registrar actividad
 
 ## 🎥 Video de Demostración
 
-[Enlace al video en YouTube] (Pendiente)
+**[Ver Video en YouTube](PENDIENTE_AGREGAR_ENLACE)**
 
 El video muestra:
-- Registro e inicio de sesión
-- Creación y despliegue de un proyecto
-- Funcionamiento del sistema
-- Gestión de recursos y auto-apagado
+- Registro e inicio de sesión con Roble
+- Selección de template y clonación a repositorio propio
+- Creación y despliegue de un proyecto desde GitHub
+- Acceso al proyecto mediante subdomain
+- Funcionamiento de la gestión de recursos (rate limiting)
+- Auto-apagado tras 30 minutos de inactividad
+- Auto-reinicio automático al recibir nueva petición
+
+**Duración**: ~7 minutos
+
+---
+
+## 📄 Documentación Técnica
+
+Para información técnica detallada sobre arquitectura, flujo de trabajo y estrategias de seguridad, consulta:
+
+**👉 [Documento Técnico Completo](./DOCUMENTACION_TECNICA.md)** (PENDIENTE)
+
+Incluye:
+- Descripción detallada de arquitectura y componentes
+- Diagramas de flujo del sistema
+- Estrategia de seguridad y rate limiting
+- Optimización de recursos y políticas de auto-apagado
+
+---
 
 ## 👥 Equipo
 
-[Nombres de los integrantes del equipo]
+**Integrantes del Proyecto:**
+
+- [Nombre Integrante 1] - [Rol/Responsabilidad]
+- [Nombre Integrante 2] - [Rol/Responsabilidad]
+- [Nombre Integrante 3] - [Rol/Responsabilidad]
+- [Agregar más según el equipo...]
+
+**Curso**: Estructura del Computador II  
+**Universidad del Norte**  
+**Año**: 2025
 
 ## 📄 Licencia y Autorización
 
