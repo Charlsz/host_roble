@@ -2,7 +2,7 @@
 
 Este directorio contiene plantillas base preconfiguradas que los usuarios pueden utilizar para desplegar proyectos rápidamente en la plataforma ROBLE Host.
 
-## 🚀 ¿Cómo usar estos templates?
+##  ¿Cómo usar estos templates?
 
 ### Instrucciones Paso a Paso
 
@@ -15,7 +15,7 @@ Este directorio contiene plantillas base preconfiguradas que los usuarios pueden
    - Ve a: https://github.com/new
    - Nombre: `mi-proyecto` (o como quieras llamarlo)
    - Público o privado (ambos funcionan)
-   - ✅ Clic en "Create repository"
+   -  Clic en "Create repository"
 
 3. **Copia los archivos del template a tu repositorio**
    
@@ -62,9 +62,9 @@ Este directorio contiene plantillas base preconfiguradas que los usuarios pueden
 
 ---
 
-## 📦 Templates Disponibles
+##  Templates Disponibles
 
-### 1. 🌐 Plantilla Estática (`static_template`)
+### 1.  Plantilla Estática (`static_template`)
 
 **Descripción**: Sitio web estático básico servido con Nginx.
 
@@ -83,7 +83,7 @@ static_template/
 
 ---
 
-### 2. ⚛️ Plantilla React (`react_template`)
+### 2.  Plantilla React (`react_template`)
 
 **Descripción**: Aplicación React ligera usando React desde CDN (sin build process).
 
@@ -104,7 +104,7 @@ react_template/
 
 ---
 
-### 3. 🐍 Plantilla Flask (`flask_template`)
+### 3.  Plantilla Flask (`flask_template`)
 
 **Descripción**: API REST básica con Flask y Gunicorn.
 
@@ -124,21 +124,21 @@ flask_template/
 
 ---
 
-## 🎯 Acceso Rápido
+##  Acceso Rápido
 
 Para ver los templates con código completo listo para copiar, abre:
 
-**👉 [Página de Templates en el Dashboard](http://localhost:8080/templates.html)**
+** [Página de Templates en el Dashboard](http://localhost:8080/templates.html)**
 
 Esta página incluye:
-- ✅ Instrucciones paso a paso
-- ✅ Código completo de cada archivo
-- ✅ Botón para copiar cada archivo al portapapeles
-- ✅ Explicaciones de qué hace cada template
+-  Instrucciones paso a paso
+-  Código completo de cada archivo
+-  Botón para copiar cada archivo al portapapeles
+-  Explicaciones de qué hace cada template
 
 ---
 
-## 🧪 Probar Localmente (Opcional)
+##  Probar Localmente (Opcional)
 
 Si quieres probar un template antes de desplegarlo:
 
@@ -164,7 +164,7 @@ docker run -p 8003:5000 test-flask
 
 ---
 
-## 💡 Consejos
+##  Consejos
 
 - **Nombres de proyecto**: Usa solo letras minúsculas, números y guiones (sin espacios ni caracteres especiales)
 - **Dockerfile obligatorio**: Todos los proyectos deben incluir un `Dockerfile` en la raíz del repositorio
@@ -174,7 +174,7 @@ docker run -p 8003:5000 test-flask
 
 ---
 
-## 🆘 Soporte
+##  Soporte
 
 Si tienes problemas:
 1. Verifica que tu repositorio tenga un `Dockerfile` válido
@@ -184,4 +184,4 @@ Si tienes problemas:
 
 ---
 
-**Última actualización**: Noviembre 2025
+**Última actualización**: 02 Noviembre 2025
