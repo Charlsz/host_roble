@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Plantilla React (CDN)</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <style>body{font-family:Arial,Helvetica,sans-serif;background:#fff;margin:0;padding:24px}</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    const e = React.createElement;
+    function App(){
+      return e('div', {style:{maxWidth:760,margin:'0 auto',textAlign:'center'}}, [
+        e('h1', null, 'Plantilla React (CDN)'),
+        e('p', null, 'Ejemplo simple de React servido como sitio estático usando CDN.'),
+        e('button', {onClick:()=>alert('Hola desde React!')}, 'Presióname')
+      ]);
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+  </script>
+</body>
+</html>
