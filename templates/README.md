@@ -85,22 +85,35 @@ static_template/
 
 ### 2.  Plantilla React (`react_template`)
 
-**Descripción**: Aplicación React ligera usando React desde CDN (sin build process).
+**Descripción**: Aplicación React completa con Vite. Build multi-stage que compila el proyecto y genera una versión estática optimizada.
 
 **Estructura**:
 ```
 react_template/
-├── index.html       # HTML con React cargado desde CDN
-└── Dockerfile       # Imagen nginx:alpine
+├── src/
+│   ├── App.jsx          # Componente principal
+│   ├── App.css          # Estilos del componente
+│   ├── main.jsx         # Punto de entrada
+│   └── index.css        # Estilos globales
+├── index.html           # HTML principal
+├── package.json         # Dependencias (React 18, Vite)
+├── vite.config.js       # Configuración de Vite
+└── Dockerfile           # Build multi-stage (Node.js → Nginx)
 ```
 
-**Uso recomendado**: Prototipos rápidos de React, SPAs simples, demos interactivos.
+**Uso recomendado**: Aplicaciones React modernas, SPAs completas, dashboards, apps interactivas.
 
-**Puerto interno**: 80
+**Puerto interno**: 80 (Nginx sirve los archivos compilados)
 
-**Nota**: Esta plantilla no requiere Node.js ni npm. React se carga directamente desde unpkg.com.
+**Características**:
+- ⚡ Desarrollo rápido con Vite HMR
+- 🐳 Dockerfile multi-stage (compila y optimiza automáticamente)
+- 📦 Build estático minificado servido con Nginx
+- 🚀 Imagen final ligera (~25MB)
 
-**Instrucciones detalladas**: Ver la página de templates en el dashboard (`http://localhost:8080/templates.html`)
+**Nota**: El Dockerfile se encarga de todo el proceso de build automáticamente. No necesitas instalar Node.js localmente para desplegar.
+
+**Instrucciones detalladas**: Ver `react_template/README.md` o la página de templates en el dashboard (`http://localhost:8080/templates.html`)
 
 ---
 
@@ -149,17 +162,29 @@ docker build -t test-static .
 docker run -p 8001:80 test-static
 # Abrir http://localhost:8001
 
-# Plantilla React
+# Plantilla React (tarda más por el build de Node.js)
 cd templates/react_template
 docker build -t test-react .
 docker run -p 8002:80 test-react
 # Abrir http://localhost:8002
+# Nota: El build puede tardar 2-3 minutos la primera vez
 
 # Plantilla Flask
 cd templates/flask_template
 docker build -t test-flask .
 docker run -p 8003:5000 test-flask
 # Abrir http://localhost:8003
+```
+
+### Desarrollo Local con React (Opcional)
+
+Si quieres desarrollar localmente antes de desplegar:
+
+```bash
+cd templates/react_template
+npm install
+npm run dev
+# Abrir http://localhost:3000
 ```
 
 ---
@@ -171,6 +196,8 @@ docker run -p 8003:5000 test-flask
 - **Puertos**: Los templates usan puertos estándar (80 para nginx, 5000 para Flask). La plataforma los mapea automáticamente
 - **Personalización**: Puedes modificar todo el contenido de los templates. Son solo puntos de partida
 - **Updates**: Después de hacer cambios en tu repositorio, usa el botón "Rebuild" en el dashboard para actualizar tu proyecto
+- **Template React**: El build multi-stage puede tardar unos minutos en el primer deploy (Node.js compila el proyecto), pero el resultado es una imagen optimizada y ligera
+- **node_modules**: No subas la carpeta `node_modules` a GitHub (está en `.gitignore`). Docker la instalará automáticamente durante el build
 
 ---
 
@@ -184,4 +211,4 @@ Si tienes problemas:
 
 ---
 
-**Última actualización**: 02 Noviembre 2025
+**Última actualización**: 08 Noviembre 2025
