@@ -286,14 +286,6 @@ Ver logs detallados:
 docker-compose logs manager
 ```
 
-## Equipo
-
-**Integrantes del Proyecto:**
-
-- [Carlos Galvis] - [Developer]
-<!-- - [Nombre Integrante 2] - [Rol/Responsabilidad]
-- [Nombre Integrante 3] - [Rol/Responsabilidad] -->
-
 **Curso**: Estructura del Computador II  
 **Universidad del Norte**  
 **Año**: 2025
