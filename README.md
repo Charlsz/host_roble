@@ -4,8 +4,6 @@ Plataforma de hosting de páginas web basada en contenedores Docker con autentic
 
 ## Video de Demostración
 
-**[Ver Video en YouTube](PENDIENTE_AGREGAR_ENLACE)**
-
 Contenido del video:
 - Registro e inicio de sesión con Roble
 - Creación y despliegue de un proyecto desde GitHub
